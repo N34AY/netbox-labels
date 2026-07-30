@@ -1,4 +1,4 @@
-# NetBox QR
+# NetBox Labels
 
 A [NetBox](https://github.com/netbox-community/netbox) plugin that generates scannable QR
 code labels for your objects (devices, racks, cables, sites, tenants, IP addresses, ...) from
@@ -58,18 +58,18 @@ both direct label printers and regular printers.
 
    ```python
    PLUGINS = [
-       "netbox_qr",
+       "netbox_labels",
    ]
 
    PLUGINS_CONFIG = {
-       "netbox_qr": {},
+       "netbox_labels": {},
    }
    ```
 
 3. Run migrations and collect static files:
 
    ```bash
-   python manage.py migrate netbox_qr
+   python manage.py migrate netbox_labels
    python manage.py collectstatic --no-input
    ```
 
@@ -113,7 +113,7 @@ bind a template to fields your users (not just template authors) can edit.
 
 `html_code`/`css_code`/`js_code` are rendered and executed as-is — the same trust model
 NetBox itself uses for Export Templates and Custom Links. Only users with
-`netbox_qr.add_qrtemplate` / `change_qrtemplate` permission can author or edit templates, so
+`netbox_labels.add_qrtemplate` / `change_qrtemplate` permission can author or edit templates, so
 that permission should be granted only to trusted staff, the same as NetBox's own scripting
 and export-template features.
 

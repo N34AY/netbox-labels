@@ -1,0 +1,244 @@
+{% load static %}
+{% load i18n %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>{{ qr_template.name }} — {{ object }}</title>
+  <style>
+    body { margin: 0; padding: 0; font-family: sans-serif; }
+    .netbox-qr-print-btn, .netbox-qr-niimbot-btn {
+      display: block;
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+      cursor: pointer;
+      background: #0066cc;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+    }
+    .netbox-qr-toolbar {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 0.5rem;
+    }
+    @media print {
+      .netbox-qr-toolbar { display: none !important; }
+    }
+    .netbox-qr-print-dialog {
+      border: none;
+      border-radius: 8px;
+      padding: 0;
+      min-width: 15rem;
+      box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.3);
+    }
+    .netbox-qr-print-dialog::backdrop {
+      background: rgba(0, 0, 0, 0.5);
+    }
+    .netbox-qr-print-dialog h2 {
+      margin: 0;
+      padding: 1rem;
+      font-size: 1rem;
+      border-bottom: 1px solid #ddd;
+    }
+    .netbox-qr-print-dialog-body {
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .netbox-qr-print-option-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 0.75rem;
+      font-size: 1rem;
+      cursor: pointer;
+      background: #fff;
+      color: #333;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      text-align: left;
+    }
+    .netbox-qr-print-option-btn:hover {
+      background: #f0f0f0;
+    }
+    .netbox-qr-print-dialog-footer {
+      padding: 0.5rem 1rem 1rem;
+      border-top: 1px solid #eee;
+    }
+    .netbox-qr-print-dialog-footer a {
+      font-size: 0.8rem;
+      color: #666;
+      text-decoration: none;
+    }
+    .netbox-qr-print-dialog-footer a:hover {
+      text-decoration: underline;
+    }
+    {% if preview_mode %}
+    /* Templates set html/body to the label's exact mm size (see below), which
+       would fight any CSS-only centering of #netbox-qr-root — so centering is
+       done entirely in JS via translate+scale instead, see netboxQrScalePreview. */
+    #netbox-qr-root {
+      transform-origin: 0 0;
+      /* Most labels are white-on-white against the page background, so the
+         true label bounds would otherwise be invisible — outline (not
+         border, so it doesn't affect the measured box) traces its edge. */
+      outline: 1px dashed #adb5bd;
+    }
+    html, body {
+      background: #e9ecef !important;
+    }
+    {% endif %}
+    /* Any [data-netbox-qr] element gets a canvas/img/table drawn into it by
+       qr-render.js at a fixed pixel size (its data-width/data-height) — scale
+       that down to whatever box the template gives it, so authors never have
+       to remember this themselves. */
+    [data-netbox-qr] { overflow: hidden; }
+    [data-netbox-qr] canvas, [data-netbox-qr] img, [data-netbox-qr] table {
+      width: 100% !important;
+      height: 100% !important;
+    }
+    {{ css_code|safe }}
+  </style>
+</head>
+<body>
+<div class="netbox-qr-toolbar">
+  <button type="button" class="netbox-qr-print-btn" onclick="window.print()">🖨 {% trans "Print" %}</button>
+  {% if show_niimbot_button %}
+    <button type="button" class="netbox-qr-niimbot-btn" onclick="document.getElementById('netbox-qr-print-dialog').showModal()">🖨 {% trans "Print via…" %}</button>
+  {% endif %}
+</div>
+
+{% if show_niimbot_button %}
+<dialog id="netbox-qr-print-dialog" class="netbox-qr-print-dialog">
+  <h2>{% trans "Print via…" %}</h2>
+  <div class="netbox-qr-print-dialog-body">
+    <button type="button" class="netbox-qr-print-option-btn" onclick="netboxQrPrintLabel('niimbot', 'bluetooth')">📶 {% trans "Niimbot (Bluetooth)" %}</button>
+    <button type="button" class="netbox-qr-print-option-btn" onclick="netboxQrPrintLabel('niimbot', 'serial')">🔌 {% trans "Niimbot (USB)" %}</button>
+    <button type="button" class="netbox-qr-print-option-btn" onclick="netboxQrPrintLabel('zpl', 'serial')">🦓 {% trans "Zebra — ZPL (USB)" %}</button>
+    <button type="button" class="netbox-qr-print-option-btn" onclick="netboxQrPrintLabel('escpos', 'serial')">🖨 {% trans "Generic — ESC/POS (USB)" %}</button>
+  </div>
+  <div class="netbox-qr-print-dialog-footer">
+    <a href="https://github.com/N34AY/netbox-labels/issues/new" target="_blank" rel="noopener">🐞 {% trans "Report a bug / request device support" %}</a>
+  </div>
+</dialog>
+{% endif %}
+
+<script>
+  // All buttons need real screen space the tiny embedded label doesn't
+  // have, so when shown in an iframe (e.g. the object detail panel) this
+  // whole toolbar is hidden in favor of that panel's own delegating
+  // buttons, which call straight into netboxQrPrintLabel() below (same-
+  // origin iframes can call each other's functions directly).
+  if (window.self !== window.top) {
+    document.querySelector('.netbox-qr-toolbar').style.display = 'none';
+  }
+
+  function netboxQrPrintLabel(driver, transport) {
+    var dialog = document.getElementById('netbox-qr-print-dialog');
+    if (dialog && dialog.open) {
+      dialog.close();
+    }
+    var impl = NetBoxQRPrintCommon.getDriver(driver);
+    if (impl) {
+      impl.print({ transport: transport });
+    }
+  }
+</script>
+
+<div id="netbox-qr-root">{{ body_html|safe }}</div>
+
+{{ object_data|json_script:"netbox-qr-object-data" }}
+{{ netbox_labels_meta|json_script:"netbox-qr-meta" }}
+
+<script src="{% static 'netbox_labels/qrcode.js' %}"></script>
+<script src="{% static 'netbox_labels/qr-render.js' %}"></script>
+{% if show_niimbot_button %}
+  <script src="{% static 'netbox_labels/qr-print-common.js' %}"></script>
+  <script src="{% static 'netbox_labels/niimbluelib.min.js' %}"></script>
+  <script src="{% static 'netbox_labels/niimbot-print.js' %}"></script>
+  <script src="{% static 'netbox_labels/escpos-print.js' %}"></script>
+  <script src="{% static 'netbox_labels/zpl-print.js' %}"></script>
+{% endif %}
+<script>
+{{ js_code|safe }}
+</script>
+
+<script>
+  // When embedded (e.g. the object detail panel's iframe), report our true
+  // rendered size so the parent can size the iframe to match exactly —
+  // showing the label at its actual physical size, not an arbitrary box.
+  function netboxQrReportSize() {
+    if (window.self === window.top) {
+      return;
+    }
+    var rect = document.body.getBoundingClientRect();
+    window.parent.postMessage({
+      type: 'netbox-qr-size',
+      width: Math.ceil(rect.width),
+      height: Math.ceil(rect.height),
+    }, '*');
+  }
+  window.addEventListener('load', netboxQrReportSize);
+</script>
+
+{% if show_niimbot_button %}
+<script>
+  // Bulk printing (qr-bulk-print.js) loads each selected object's render
+  // page into one hidden, reused iframe rather than rendering hundreds of
+  // visible ones — this lets the parent ask this document to rasterize
+  // itself and hand the bitmap back, instead of duplicating the Jinja2/QR
+  // rendering pipeline in the bulk-print page itself.
+  window.addEventListener('message', function (event) {
+    if (!event.data || event.data.type !== 'netbox-qr-rasterize-request') {
+      return;
+    }
+    var dpi = event.data.dpi || 203;
+    var canvas = NetBoxQRPrintCommon.rasterizeLabel(dpi);
+    event.source.postMessage({
+      type: 'netbox-qr-rasterize-response',
+      dataUrl: canvas.toDataURL('image/png'),
+      width: canvas.width,
+      height: canvas.height,
+    }, '*');
+  });
+</script>
+{% endif %}
+
+{% if preview_mode %}
+<script>
+  // Labels are laid out at true physical (mm-to-px) size, which is often
+  // just a couple centimeters — fine embedded at 1:1 next to the real
+  // object, but lost in a corner of the modal's large preview box. Zoom the
+  // rendered label up (never down) and center it in the viewport, computed
+  // entirely here (not via CSS) since the template's own css_code always
+  // pins html/body to the label's exact mm size, which would otherwise
+  // fight any CSS-based centering of the root element.
+  function netboxQrScalePreview() {
+    var root = document.getElementById('netbox-qr-root');
+    root.style.transform = 'none';
+    var rect = root.getBoundingClientRect();
+    if (!rect.width || !rect.height) {
+      return;
+    }
+    var margin = 32;
+    var availW = Math.max(1, window.innerWidth - margin);
+    var availH = Math.max(1, window.innerHeight - margin);
+    var scale = Math.min(availW / rect.width, availH / rect.height);
+    scale = Math.min(Math.max(scale, 1), 8);
+    var translateX = (window.innerWidth - rect.width * scale) / 2 - rect.left;
+    var translateY = (window.innerHeight - rect.height * scale) / 2 - rect.top;
+    root.style.transform = 'translate(' + translateX + 'px, ' + translateY + 'px) scale(' + scale + ')';
+  }
+  window.addEventListener('load', netboxQrScalePreview);
+  window.addEventListener('resize', netboxQrScalePreview);
+</script>
+{% endif %}
+</body>
+</html>

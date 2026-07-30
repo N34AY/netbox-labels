@@ -3,9 +3,9 @@ requires = ["setuptools>=64.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "netbox-qr"
+name = "netbox-labels"
 version = "0.1.0"
-description = "QR code templates for NetBox objects"
+description = "QR code label templates for NetBox objects"
 readme = "README.md"
 license = "Apache-2.0"
 requires-python = ">=3.12"
@@ -31,10 +31,10 @@ Issues = "https://github.com/N34AY/netbox-labels/issues"
 dev = ["ruff"]
 
 [tool.setuptools.packages.find]
-include = ["netbox_qr*"]
+include = ["netbox_labels*"]
 
 [tool.setuptools.package-data]
-netbox_qr = [
+netbox_labels = [
     "templates/**/*",
     "static/**/*",
     "migrations/*",
