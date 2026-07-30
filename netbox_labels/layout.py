@@ -86,7 +86,13 @@ def _render_format_string(format_str):
     return ''.join(parts)
 
 
-def _text_content(element):
+def text_content(element):
+    """The Jinja2 source (not yet rendered) for a single text element's
+    binding — e.g. '{{ object }}' or a "custom"/"format" expression wrapped
+    in a default() fallback. Also called directly by rendering.py to
+    test-render a risky element's fragment standalone before it's part of a
+    full document (see sanitize_layout_for_context()), so this stays a
+    real part of the module's interface, not html_code-generation-only."""
     binding = element.get('binding', 'object')
     if binding == 'static':
         # Wrapped in {% raw %} so literal "{{ ... }}"-looking text in a static
@@ -150,7 +156,7 @@ def _render_text_element(element):
     if letter_spacing:
         style += f"letter-spacing:{_num(letter_spacing, 0)}mm;"
     style += 'overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-family:Arial,Helvetica,sans-serif;'
-    return f'<div style="{style}">{_text_content(element)}</div>'
+    return f'<div style="{style}">{text_content(element)}</div>'
 
 
 _RENDERERS = {

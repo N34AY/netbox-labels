@@ -735,15 +735,26 @@
 
 	var searchDebounce = null;
 
+	// Same class of race renderPreview() guards against with previewRequestId
+	// above: switching content type and typing a query in quick succession
+	// fires overlapping requests with no guarantee they resolve in order —
+	// without this, a slower, superseded search response finishing later
+	// would silently replace the correct, already-shown results.
+	var searchRequestId = 0;
+
 	function runObjectSearch() {
 		var contentTypeId = previewContentType.value;
 		var query = previewSearch.value.trim();
 		if (!contentTypeId) {
 			return;
 		}
+		var requestId = ++searchRequestId;
 		fetch(searchUrl + '?content_type_id=' + encodeURIComponent(contentTypeId) + '&q=' + encodeURIComponent(query))
 			.then(function (response) { return response.json(); })
 			.then(function (data) {
+				if (requestId !== searchRequestId) {
+					return;
+				}
 				previewResults.innerHTML = '';
 				(data.results || []).forEach(function (result) {
 					var item = document.createElement('a');

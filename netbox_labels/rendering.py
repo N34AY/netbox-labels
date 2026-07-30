@@ -4,7 +4,7 @@ from django.contrib.contenttypes.models import ContentType
 from utilities.api import get_serializer_for_model
 from utilities.jinja2 import render_jinja2
 
-from .layout import _text_content
+from .layout import text_content
 
 
 # Only the html_code render goes through autoescape — its output is inserted into the
@@ -86,13 +86,30 @@ def sanitize_layout_for_context(layout, context):
 
     Returns (sanitized_layout, errors), where errors is a list of
     (element_id, message) pairs for whichever elements were blanked.
+
+    This does mean a successful "custom"/"format" fragment gets rendered
+    twice per call — once here, standalone, and again as part of the full
+    combined document a moment later — rather than reusing this pass's
+    already-rendered result. That's deliberate, not an oversight: caching
+    the rendered *text* and splicing it into the layout as literal content
+    would make it part of the html_code string that then goes through a
+    *second* Jinja2 render for the full document — and Jinja2's own output
+    is not escaped against being re-interpreted as more Jinja2 syntax on a
+    second pass. An object whose data happens to render as something that
+    looks like "{{ some_expression }}" (rare, but not something a template
+    author controls — it's whatever the bound object's own field values are)
+    would have that text evaluated as real template code the second time
+    around, which is a bug this module has otherwise been careful to keep
+    out entirely (see render_template()'s autoescape comment above). Two
+    renders of a handful of small fragments on a low-traffic preview
+    endpoint is a trivial cost next to reopening that door.
     """
     sanitized = copy.deepcopy(layout)
     errors = []
     for element in sanitized.get('elements', []):
         if element.get('type') != 'text' or element.get('binding') not in ('custom', 'format'):
             continue
-        fragment = _text_content(element)
+        fragment = text_content(element)
         if not fragment:
             continue
         try:

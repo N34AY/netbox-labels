@@ -32,6 +32,19 @@
     @media print {
       .netbox-qr-sheet-toolbar { display: none !important; }
     }
+    .netbox-qr-sheet-warning {
+      margin: {{ page_margin_mm }}mm auto 0;
+      width: {{ content_width_mm }}mm;
+      padding: 0.5rem 0.75rem;
+      background: #fff3cd;
+      color: #664d03;
+      border: 1px solid #ffe69c;
+      border-radius: 4px;
+      font-size: 0.85rem;
+    }
+    @media print {
+      .netbox-qr-sheet-warning { display: none !important; }
+    }
     .netbox-qr-sheet {
       display: flex;
       flex-wrap: wrap;
@@ -72,6 +85,17 @@
 <div class="netbox-qr-sheet-toolbar">
   <button type="button" onclick="window.print()">🖨 {% trans "Print" %}</button>
 </div>
+
+{% if skipped %}
+  <div class="netbox-qr-sheet-warning">
+    {% blocktrans count counter=skipped|length %}
+      {{ counter }} object could not be rendered with this template and was skipped:
+    {% plural %}
+      {{ counter }} objects could not be rendered with this template and were skipped:
+    {% endblocktrans %}
+    {{ skipped|join:", " }}
+  </div>
+{% endif %}
 
 <div class="netbox-qr-sheet">
   {% for body_html in labels %}

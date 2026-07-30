@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-30 16:57+0000\n"
+"POT-Creation-Date: 2026-07-30 18:28+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -274,7 +274,7 @@ msgid "QR Codes"
 msgstr "QR-коди"
 
 #: templates/netbox_labels/inc/object_qr_panel.html:29
-#: templates/netbox_labels/qrtemplate_bulk_print_sheet.html:73
+#: templates/netbox_labels/qrtemplate_bulk_print_sheet.html:86
 #: templates/netbox_labels/render.html:112
 msgid "Print"
 msgstr "Друк"
@@ -438,6 +438,39 @@ msgstr "На кожній сторінці розміщується стільк
 msgid "Back"
 msgstr "Назад"
 
+#: templates/netbox_labels/qrtemplate_bulk_print_sheet.html:91
+#, python-format
+msgid ""
+"\n"
+"      %(counter)s object could not be rendered with this template and was "
+"skipped:\n"
+"    "
+msgid_plural ""
+"\n"
+"      %(counter)s objects could not be rendered with this template and were "
+"skipped:\n"
+"    "
+msgstr[0] ""
+"\n"
+"      %(counter)s об'єкт не вдалося відрендерити за допомогою цього шаблону "
+"і його пропущено:\n"
+"    "
+msgstr[1] ""
+"\n"
+"      %(counter)s об'єкти не вдалося відрендерити за допомогою цього "
+"шаблону і їх пропущено:\n"
+"    "
+msgstr[2] ""
+"\n"
+"      %(counter)s об'єктів не вдалося відрендерити за допомогою цього "
+"шаблону і їх пропущено:\n"
+"    "
+msgstr[3] ""
+"\n"
+"      %(counter)s об'єктів не вдалося відрендерити за допомогою цього "
+"шаблону і їх пропущено:\n"
+"    "
+
 #: templates/netbox_labels/qrtemplate_design.html:47
 msgid "Undo"
 msgstr "Відмінити"
@@ -523,7 +556,7 @@ msgstr ""
 msgid "Design visually"
 msgstr "Візуальний дизайн"
 
-#: templates/netbox_labels/render.html:157
+#: templates/netbox_labels/render.html:163
 msgid "Template error"
 msgstr "Помилка шаблону"
 
@@ -532,19 +565,27 @@ msgstr "Помилка шаблону"
 msgid "QR Settings"
 msgstr "Налаштування QR"
 
-#: views.py:181
+#: views.py:184
 msgid "Could not parse the submitted layout."
 msgstr "Не вдалося розпізнати надісланий макет."
 
-#: views.py:190
+#: views.py:193
 msgid "Design saved."
 msgstr "Дизайн збережено."
 
-#: views.py:335 views.py:374
+#: views.py:345
+msgid "This label could not be rendered. Contact a QR template administrator."
+msgstr "Не вдалося відрендерити цю етикетку. Зверніться до адміністратора шаблонів QR."
+
+#: views.py:383 views.py:422
 msgid "No valid objects were selected."
 msgstr "Не вибрано жодного дійсного об'єкта."
 
-#: views.py:420
+#: views.py:456
+msgid "None of the selected objects could be rendered with this template."
+msgstr "Жоден із вибраних об'єктів не вдалося відрендерити за допомогою цього шаблону."
+
+#: views.py:486
 msgid "QR settings saved."
 msgstr "Налаштування QR збережено."
 

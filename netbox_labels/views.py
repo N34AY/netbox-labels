@@ -1,4 +1,5 @@
 import json
+import logging
 import re
 from decimal import Decimal, InvalidOperation
 
@@ -17,6 +18,8 @@ from utilities.views import safe_for_redirect
 from . import filtersets, forms, rendering, tables
 from .layout import layout_to_css, layout_to_html
 from .models import QRSettings, QRSizePreset, QRTemplate
+
+logger = logging.getLogger(__name__)
 
 
 def _redirect_back(request):
@@ -236,8 +239,8 @@ class QRTemplatePreviewView(LoginRequiredMixin, PermissionRequiredMixin, View):
         except ValueError:
             return HttpResponseBadRequest('Invalid layout JSON.')
 
-        width_mm = request.POST.get('width_mm') or qr_template.width_mm
-        height_mm = request.POST.get('height_mm') or qr_template.height_mm
+        width_mm = _parse_dimension_mm(request.POST.get('width_mm'), qr_template.width_mm)
+        height_mm = _parse_dimension_mm(request.POST.get('height_mm'), qr_template.height_mm)
         qr_value = request.POST.get('qr_value') or qr_template.qr_value
 
         content_type_id = request.POST.get('content_type_id')
@@ -328,7 +331,22 @@ class QRRenderView(LoginRequiredMixin, View):
         if not qr_template.applies_to(content_type):
             raise Http404
 
-        context = rendering.render_template(qr_template, instance, request)
+        render_error = None
+        try:
+            context = rendering.render_template(qr_template, instance, request)
+        except Exception:
+            # This is the production render path — reached by anyone with
+            # view access to the object, not just whoever authored the
+            # template — so unlike the designer's own preview, the real
+            # exception is logged (for whoever can fix the template) rather
+            # than shown; the viewer just gets a generic notice and a
+            # (mostly empty) label instead of a 500.
+            logger.exception('Failed to render QRTemplate %s for %s', qr_template.pk, instance)
+            render_error = str(_('This label could not be rendered. Contact a QR template administrator.'))
+            context = {
+                'qr_value': '', 'body_html': '', 'css_code': qr_template.css_code, 'js_code': '',
+                'object_data': {}, 'object': instance, 'object_type': content_type,
+            }
         context['qr_template'] = qr_template
         context['show_niimbot_button'] = QRSettings.load().show_niimbot_button
         # Opt-in via ?preview=1: reuses the same zoom-to-fit/centering treatment
@@ -337,6 +355,7 @@ class QRRenderView(LoginRequiredMixin, View):
         # rasterization worker) this must stay off, since it applies a CSS
         # transform that would throw off rasterizeLabel()'s measured size.
         context['preview_mode'] = bool(request.GET.get('preview'))
+        context['render_error'] = render_error
         context['netbox_labels_meta'] = {
             'value': context['qr_value'],
             'objectType': f'{content_type.app_label}.{content_type.model}',
@@ -406,8 +425,21 @@ class QRBulkPrintSheetView(LoginRequiredMixin, View):
         page_format = PAGE_FORMATS.get(request.POST.get('page_format'), PAGE_FORMATS['A4'])
 
         labels = []
+        skipped = []
         for obj in objects:
-            context = rendering.render_template(qr_template, obj, request)
+            try:
+                context = rendering.render_template(qr_template, obj, request)
+            except Exception:
+                # One object's data tripping up a binding (e.g. a None field a
+                # custom/format expression doesn't guard against) shouldn't cost
+                # every other selected object its label too — skip just this
+                # one and note it, rather than failing the whole sheet. The
+                # real exception is logged (for whoever maintains the
+                # template) but not shown to the viewer, who isn't necessarily
+                # the template's author and has no use for a Python traceback.
+                logger.exception('Failed to render QRTemplate %s for %s in bulk print sheet', qr_template.pk, obj)
+                skipped.append(str(obj))
+                continue
             # The generated markup relies on a page-global window.NetBoxQR.value
             # for what a [data-netbox-qr] element encodes (fine when each label
             # is its own document) — on a combined sheet every label needs its
@@ -420,11 +452,16 @@ class QRBulkPrintSheetView(LoginRequiredMixin, View):
             )
             labels.append(body_html)
 
+        if not labels:
+            messages.error(request, _('None of the selected objects could be rendered with this template.'))
+            return _redirect_back(request)
+
         content_width_mm = page_format['width_mm'] - 2 * PAGE_MARGIN_MM
 
         return render(request, 'netbox_labels/qrtemplate_bulk_print_sheet.html', {
             'qr_template': qr_template,
             'labels': labels,
+            'skipped': skipped,
             'page_format': page_format,
             'page_margin_mm': _css_mm(PAGE_MARGIN_MM),
             'content_width_mm': _css_mm(content_width_mm),
