@@ -40,3 +40,16 @@ netbox_labels = [
     "migrations/*",
     "locale/**/*",
 ]
+
+[tool.ruff]
+line-length = 119
+target-version = "py312"
+extend-exclude = ["*/migrations/*"]
+
+[tool.ruff.lint]
+# Real-bug rules only (unused/undefined names, syntax errors, basic pycodestyle
+# errors) — deliberately not the wider stylistic/opinionated rule families,
+# which would fight choices made elsewhere in this codebase for good reason
+# (e.g. the broad `except Exception` catches in views.py, each with a comment
+# explaining why a narrower catch wouldn't do).
+select = ["E4", "E7", "E9", "F"]

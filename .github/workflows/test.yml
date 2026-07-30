@@ -1,0 +1,75 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install ruff
+      - run: ruff check .
+
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: netbox
+          POSTGRES_PASSWORD: netbox
+          POSTGRES_DB: netbox
+        options: >-
+          --health-cmd "pg_isready -U netbox"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: valkey/valkey:8-alpine
+        options: >-
+          --health-cmd "valkey-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    # Running the job itself inside NetBox's own image, rather than just
+    # installing NetBox as a step, since a plugin's tests need the full
+    # NetBox app registry (real dcim/ipam/etc. models, migrations) — there's
+    # no lighter-weight way to get that than the real thing.
+    container:
+      image: netboxcommunity/netbox:v4.6-5.0.2
+      env:
+        DB_HOST: postgres
+        DB_NAME: netbox
+        DB_USER: netbox
+        DB_PASSWORD: netbox
+        REDIS_HOST: redis
+        REDIS_CACHE_HOST: redis
+        # Fine to hardcode: a throwaway key for an ephemeral CI database that
+        # never holds real data, not a secret protecting anything.
+        SECRET_KEY: "ci0000000000000000000000000000000000000000000000000000000000000"
+        SKIP_SUPERUSER: "true"
+        SKIP_STARTUP_SCRIPTS: "true"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: netbox-labels
+
+      - name: Install the plugin
+        run: uv pip install -e ./netbox-labels
+
+      - name: Enable the plugin
+        run: echo "PLUGINS = ['netbox_labels']" > /etc/netbox/config/plugins.py
+
+      - name: Run migrations
+        working-directory: /opt/netbox/netbox
+        run: python manage.py migrate --no-input
+
+      - name: Run tests
+        working-directory: /opt/netbox/netbox
+        run: python manage.py test netbox_labels --no-input

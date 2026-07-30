@@ -1,5 +1,8 @@
 # NetBox Labels
 
+[![Tests](https://github.com/N34AY/netbox-labels/actions/workflows/test.yml/badge.svg)](https://github.com/N34AY/netbox-labels/actions/workflows/test.yml)
+[![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
+
 A [NetBox](https://github.com/netbox-community/netbox) plugin that generates scannable QR
 code labels for your objects (devices, racks, cables, sites, tenants, IP addresses, ...) from
 admin-defined HTML/CSS/JS templates, with a no-code visual designer and printing support for
