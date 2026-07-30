@@ -238,24 +238,32 @@ class QRTemplatePreviewView(LoginRequiredMixin, PermissionRequiredMixin, View):
 
         width_mm = request.POST.get('width_mm') or qr_template.width_mm
         height_mm = request.POST.get('height_mm') or qr_template.height_mm
-        html_code = layout_to_html(layout, width_mm, height_mm)
-        css_code = layout_to_css(layout, width_mm, height_mm)
         qr_value = request.POST.get('qr_value') or qr_template.qr_value
 
         content_type_id = request.POST.get('content_type_id')
         object_id = request.POST.get('object_id')
-
-        preview_template = QRTemplate(html_code=html_code, css_code=css_code, qr_value=qr_value)
         is_real_object = bool(content_type_id and object_id)
 
-        # A broken binding (bad Jinja2 syntax, a typo'd attribute chain that
-        # raises instead of resolving to Undefined, etc.) would otherwise
-        # bubble up as an unhandled exception here — a 500 page with no
-        # label and no indication of what's wrong. Since this view only ever
-        # backs the designer's own live preview (never an actual printed
-        # label), it's caught and surfaced in the response instead, so the
-        # preview can show the user exactly what broke. Only surfaced for a
-        # real-object preview though: against placeholder data, an
+        instance = None
+        if is_real_object:
+            content_type = get_object_or_404(ContentType, pk=content_type_id)
+            model = content_type.model_class()
+            if model is None:
+                raise Http404
+            instance = get_object_or_404(model.objects.restrict(request.user, 'view'), pk=object_id)
+            render_context = rendering.build_context(instance, request)
+        else:
+            render_context = rendering.build_placeholder_context(request)
+
+        # All of a template's elements are combined into one Jinja2 template
+        # and rendered together, so a single broken binding (bad Jinja2
+        # syntax, an expression that raises instead of resolving to
+        # Undefined, etc.) would otherwise blank the *entire* label — QR
+        # code and all. Each "custom"/"format" element's own fragment is
+        # test-rendered first against a copy of the layout, and blanked out
+        # if it raises, so the rest of the label still renders normally;
+        # only its own content is missing. Only surfaced as a visible error
+        # for a real-object preview though: against placeholder data, an
         # expression that's actually fine for a real object (e.g. one
         # involving an attribute the placeholder object doesn't have) can
         # easily raise in ways that don't mean anything is really wrong —
@@ -263,27 +271,28 @@ class QRTemplatePreviewView(LoginRequiredMixin, PermissionRequiredMixin, View):
         # layout.py's default() fallback), but not every possible failure
         # mode is, so a genuinely broken expression is confirmed against
         # real data rather than flagged as an error against fake data.
+        safe_layout, element_errors = rendering.sanitize_layout_for_context(layout, render_context)
+        html_code = layout_to_html(safe_layout, width_mm, height_mm)
+        css_code = layout_to_css(safe_layout, width_mm, height_mm)
+        preview_template = QRTemplate(html_code=html_code, css_code=css_code, qr_value=qr_value)
+
         render_error = None
         try:
             if is_real_object:
-                content_type = get_object_or_404(ContentType, pk=content_type_id)
-                model = content_type.model_class()
-                if model is None:
-                    raise Http404
-                instance = get_object_or_404(model.objects.restrict(request.user, 'view'), pk=object_id)
                 context = rendering.render_template(preview_template, instance, request)
             else:
                 context = rendering.render_placeholder(preview_template, request)
-        except Http404:
-            raise
         except Exception as e:
-            # Still caught (never a 500) either way — only surfaced as a
-            # visible error for a real-object preview; for placeholder data
-            # it just falls back to a blank label, same as before this
-            # error-reporting existed.
+            # A safety net for whatever sanitize_layout_for_context() doesn't
+            # cover (e.g. something outside a text element's own binding) —
+            # still never a 500 either way, only surfaced for a real object.
             if is_real_object:
                 render_error = f'{e.__class__.__name__}: {e}'
             context = {'qr_value': '', 'body_html': '', 'css_code': css_code, 'js_code': '', 'object_data': {}}
+
+        if is_real_object and element_errors:
+            detail = '\n'.join(f'{element_id}: {message}' for element_id, message in element_errors)
+            render_error = f'{render_error}\n\n{detail}' if render_error else detail
 
         context['qr_template'] = qr_template
         context['show_niimbot_button'] = False

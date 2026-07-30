@@ -153,13 +153,17 @@
 </script>
 
 {% if render_error %}
-  <div style="position:fixed;inset:0;margin:0;padding:0.75rem;box-sizing:border-box;background:#fff3f3;color:#842029;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:0.8rem;white-space:pre-wrap;overflow:auto;border:2px solid #dc3545;">
+  {% comment %}
+    One broken element's binding doesn't stop the rest of the label from
+    rendering (see sanitize_layout_for_context() in rendering.py) — the
+    error is shown as an overlay banner, not in place of the label.
+  {% endcomment %}
+  <div style="position:fixed;top:0;left:0;right:0;margin:0;padding:0.5rem;box-sizing:border-box;background:#fff3f3;color:#842029;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:0.7rem;white-space:pre-wrap;overflow:auto;max-height:40%;border-bottom:2px solid #dc3545;z-index:2000;">
     <strong>{% trans "Template error" %}</strong><br>{{ render_error }}
   </div>
   {{ render_error|json_script:"netbox-qr-render-error" }}
-{% else %}
-  <div id="netbox-qr-root">{{ body_html|safe }}</div>
 {% endif %}
+<div id="netbox-qr-root">{{ body_html|safe }}</div>
 
 {{ object_data|json_script:"netbox-qr-object-data" }}
 {{ netbox_labels_meta|json_script:"netbox-qr-meta" }}
