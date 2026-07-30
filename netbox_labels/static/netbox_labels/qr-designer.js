@@ -182,6 +182,7 @@
 			case 'static': return el.text || _('(empty)');
 			case 'object_type': return '{{ object_type.model }}';
 			case 'custom': return '{{ ' + (el.expr || '') + ' }}';
+			case 'format': return el.format || _('(empty)');
 			case 'object':
 			default: return '{{ object }}';
 		}
@@ -361,10 +362,17 @@
 				['object', _('Object (works for every type)')],
 				['object_type', _('Object type')],
 				['static', _('Static text')],
+				['format', _('Formatted text')],
 				['custom', _('Custom Jinja2 expression')],
 			])));
 			if (el.binding === 'static') {
 				rows.push(field(_('Text'), textInput('text', el.text || '')));
+			}
+			if (el.binding === 'format') {
+				rows.push(field(
+					_('Format'), textInput('format', el.format || ''),
+					_('Mix literal text with ${expr} placeholders, e.g. "IP - ${object.primary_ip}"')
+				));
 			}
 			if (el.binding === 'custom') {
 				rows.push(field(_('Expression'), textInput('expr', el.expr || ''), 'e.g. object.status, object.rack.name'));

@@ -14,9 +14,11 @@ Layout shape:
             "id": str, "type": "text" | "qr" | "image",
             "x_mm": float, "y_mm": float, "width_mm": float, "height_mm": float,
             # text only:
-            "binding": "static" | "object" | "object_type" | "custom",
+            "binding": "static" | "object" | "object_type" | "custom" | "format",
             "text": str,   # used when binding == "static"
             "expr": str,   # used when binding == "custom" (a Jinja2 expression, no {{ }})
+            "format": str, # used when binding == "format" (literal text with ${expr}
+                            # placeholders, e.g. "Ip - ${object.primary_ip}")
             "font_size_mm": float, "font_weight": "normal" | "bold",
             "color": str, "text_align": "left" | "center" | "right",
             "text_transform": "none" | "uppercase" | "lowercase" | "capitalize",
@@ -30,9 +32,17 @@ Layout shape:
     ],
 }
 """
+import re
+
 from django.utils.html import escape
 
 from .models import DEFAULT_HEIGHT_MM, DEFAULT_WIDTH_MM
+
+# Matches a "${expr}" placeholder in a "format" binding string, e.g. the
+# "${object.primary_ip}" in "Ip - ${object.primary_ip}" — deliberately not
+# greedy across "}" so a malformed/unclosed "${" is simply left as literal
+# text rather than swallowing the rest of the string.
+_FORMAT_PLACEHOLDER_RE = re.compile(r'\$\{([^}]*)\}')
 
 
 def _num(value, default):
@@ -40,6 +50,29 @@ def _num(value, default):
         return float(value)
     except (TypeError, ValueError):
         return default
+
+
+def _render_format_string(format_str):
+    """Turn a JS-template-literal-style string (literal text with ${expr}
+    placeholders, e.g. "Ip - ${object.primary_ip}") into Jinja2 source: each
+    ${expr} becomes a {{ expr }} expression (evaluated — and, since html_code
+    is rendered with autoescape on, HTML-escaped — at render time), while
+    every literal segment between placeholders is escaped and wrapped in
+    {% raw %} so it can't be misread as further Jinja2 syntax itself."""
+    parts = []
+    pos = 0
+    for match in _FORMAT_PLACEHOLDER_RE.finditer(format_str):
+        literal = format_str[pos:match.start()]
+        if literal:
+            parts.append('{% raw %}' + escape(literal) + '{% endraw %}')
+        expr = match.group(1).strip()
+        if expr:
+            parts.append('{{ ' + expr + ' }}')
+        pos = match.end()
+    trailing = format_str[pos:]
+    if trailing:
+        parts.append('{% raw %}' + escape(trailing) + '{% endraw %}')
+    return ''.join(parts)
 
 
 def _text_content(element):
@@ -55,6 +88,8 @@ def _text_content(element):
         return '{{ object_type.model }}'
     if binding == 'custom':
         return '{{ ' + element.get('expr', '') + ' }}'
+    if binding == 'format':
+        return _render_format_string(element.get('format', ''))
     return ''
 
 
