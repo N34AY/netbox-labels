@@ -164,12 +164,40 @@
           </div>
           <div class="col-lg-8">
             <iframe id="qr-preview-iframe" style="width: 100%; height: 60vh; border: 1px solid var(--tblr-border-color, #ccc); background: #fff;"></iframe>
+            <div class="mt-2 d-none" id="qr-preview-data-wrapper">
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-secondary"
+                data-bs-toggle="collapse"
+                data-bs-target="#qr-preview-data-collapse"
+              >
+                <i class="mdi mdi-code-json"></i> {% trans "Object data (debug)" %}
+              </button>
+              <div class="collapse mt-2" id="qr-preview-data-collapse">
+                <pre class="netbox-qr-preview-data" id="qr-preview-data-json"></pre>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </div>
 </div>
+
+<style>
+  .netbox-qr-preview-data {
+    background: var(--tblr-bg-surface-secondary, #f8f9fa);
+    border: 1px solid var(--tblr-border-color, #ccc);
+    border-radius: 4px;
+    padding: 0.75rem;
+    max-height: 20rem;
+    overflow: auto;
+    font-size: 0.8125rem;
+    white-space: pre-wrap;
+    word-break: break-all;
+    margin-bottom: 0;
+  }
+</style>
 
 {{ layout|json_script:"qr-layout-data" }}
 <script src="{% url 'plugins:netbox_labels:javascript_catalog' %}"></script>

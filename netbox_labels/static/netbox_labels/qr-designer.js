@@ -51,6 +51,8 @@
 	var previewSearch = document.getElementById('qr-preview-search');
 	var previewResults = document.getElementById('qr-preview-results');
 	var previewIframe = document.getElementById('qr-preview-iframe');
+	var previewDataWrapper = document.getElementById('qr-preview-data-wrapper');
+	var previewDataJson = document.getElementById('qr-preview-data-json');
 
 	function effectiveScale() {
 		return BASE_PX_PER_MM * zoom;
@@ -630,21 +632,57 @@
 	// Preview (rendered inline into the modal's iframe via srcdoc — no new tab)
 	//
 
+	// Guards against out-of-order responses: switching modes/objects quickly
+	// can fire a second renderPreview() before the first's fetch resolves,
+	// and there's no guarantee they resolve in request order — without this,
+	// a slower, superseded request finishing later would clobber the correct,
+	// already-displayed result.
+	var previewRequestId = 0;
+
 	function renderPreview(contentTypeId, objectId) {
+		var requestId = ++previewRequestId;
 		var formData = new FormData();
 		formData.append('csrfmiddlewaretoken', document.querySelector('#qr-save-form [name=csrfmiddlewaretoken]').value);
 		formData.append('layout_json', JSON.stringify({ elements: elements }));
 		formData.append('width_mm', canvasWidthMm);
 		formData.append('height_mm', canvasHeightMm);
-		if (contentTypeId && objectId) {
+		var isRealObject = !!(contentTypeId && objectId);
+		if (isRealObject) {
 			formData.append('content_type_id', contentTypeId);
 			formData.append('object_id', objectId);
 		}
 		fetch(previewUrl, { method: 'POST', body: formData })
 			.then(function (response) { return response.text(); })
 			.then(function (html) {
+				if (requestId !== previewRequestId) {
+					return;
+				}
 				previewIframe.srcdoc = html;
+				showPreviewData(isRealObject, html);
 			});
+	}
+
+	// The rendered HTML (netbox_labels/render.html) already embeds the
+	// object's serialized data via json_script — parsed straight out of the
+	// already-fetched HTML string (not read back out of the iframe after the
+	// fact: srcdoc's 'load' event timing turned out not reliable enough to
+	// depend on here) and shown collapsed by default behind a toggle, so
+	// template authors can check exact field names/values (e.g. for a
+	// "custom"/"format" binding expression) without cluttering the preview.
+	function showPreviewData(isRealObject, html) {
+		if (!isRealObject) {
+			previewDataWrapper.classList.add('d-none');
+			return;
+		}
+		try {
+			var doc = new DOMParser().parseFromString(html, 'text/html');
+			var el = doc.getElementById('netbox-qr-object-data');
+			var data = el ? JSON.parse(el.textContent) : {};
+			previewDataJson.textContent = JSON.stringify(data, null, 2);
+			previewDataWrapper.classList.remove('d-none');
+		} catch (e) {
+			previewDataWrapper.classList.add('d-none');
+		}
 	}
 
 	function setPreviewMode(mode) {
