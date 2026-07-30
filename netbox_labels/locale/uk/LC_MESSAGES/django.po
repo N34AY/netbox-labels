@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-30 11:03+0000\n"
+"POT-Creation-Date: 2026-07-30 16:26+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -16,7 +16,10 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=4; plural=(n % 1 == 0 && n % 10 == 1 && n % 100 != 11 ? 0 : n % 1 == 0 && n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14) ? 1 : n % 1 == 0 && (n % 10 ==0 || (n % 10 >=5 && n % 10 <=9) || (n % 100 >=11 && n % 100 <=14 )) ? 2: 3);\n"
+"Plural-Forms: nplurals=4; plural=(n % 1 == 0 && n % 10 == 1 && n % 100 != "
+"11 ? 0 : n % 1 == 0 && n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % "
+"100 > 14) ? 1 : n % 1 == 0 && (n % 10 ==0 || (n % 10 >=5 && n % 10 <=9) || "
+"(n % 100 >=11 && n % 100 <=14 )) ? 2: 3);\n"
 
 #: filtersets.py:12 forms.py:16
 msgid "Object types"
@@ -39,10 +42,11 @@ msgid "Template"
 msgstr "Шаблон"
 
 #: forms.py:44
-msgid "Select at least one object type, or enable \"apply to all object types\"."
+msgid ""
+"Select at least one object type, or enable \"apply to all object types\"."
 msgstr ""
-"Виберіть принаймні один тип об'єкта або увімкніть «застосувати до всіх типів"
-" об'єктів»."
+"Виберіть принаймні один тип об'єкта або увімкніть «застосувати до всіх типів "
+"об'єктів»."
 
 #: forms.py:58
 msgid "Yes"
@@ -56,45 +60,45 @@ msgstr "Ні"
 msgid "QR Size Preset"
 msgstr "Пресет розміру QR"
 
-#: models.py:16 models.py:107
+#: models.py:15 models.py:106
 msgid "name"
 msgstr "назва"
 
-#: models.py:21
+#: models.py:20
 msgid "slug"
 msgstr "скорочення"
 
-#: models.py:26 models.py:112
+#: models.py:25 models.py:111
 msgid "description"
 msgstr "опис"
 
-#: models.py:30
+#: models.py:29
 msgid "active"
 msgstr "активний"
 
-#: models.py:31
+#: models.py:30
 msgid ""
 "Inactive templates are not offered on object detail pages or renderable."
 msgstr ""
 "Неактивні шаблони не пропонуються на сторінках об'єктів і не можуть бути "
 "відрендерені."
 
-#: models.py:35
+#: models.py:34
 msgid "apply to all object types"
 msgstr "застосувати до всіх типів об'єктів"
 
-#: models.py:36
+#: models.py:35
 msgid ""
 "Make this template available for every object type, ignoring the selection "
 "below."
 msgstr ""
 "Зробити цей шаблон доступним для всіх типів об'єктів, ігноруючи вибір нижче."
 
-#: models.py:42
+#: models.py:41
 msgid "object types"
 msgstr "типи об'єктів"
 
-#: models.py:43
+#: models.py:42
 msgid ""
 "The object type(s) this template applies to (ignored if \"apply to all\" is "
 "enabled)."
@@ -102,111 +106,98 @@ msgstr ""
 "Тип(и) об'єктів, до яких застосовується цей шаблон (ігнорується, якщо "
 "увімкнено «застосувати до всіх»)."
 
-#: models.py:48 templates/netbox_labels/qrtemplate.html:62
+#: models.py:47 templates/netbox_labels/qrtemplate.html:62
 msgid "QR code value"
 msgstr "Значення QR-коду"
 
-#: models.py:49
+#: models.py:48
 msgid "Jinja2 template for the data encoded in the QR code."
 msgstr "Шаблон Jinja2 для даних, закодованих у QR-коді."
 
-#: models.py:55 models.py:117
+#: models.py:54 models.py:116
 msgid "width (mm)"
 msgstr "ширина (мм)"
 
-#: models.py:56
+#: models.py:55
 msgid ""
-"Physical label width. Used as the default canvas size in the visual "
-"designer."
+"Physical label width. Used as the default canvas size in the visual designer."
 msgstr ""
-"Фізична ширина етикетки. Використовується як розмір полотна за замовчуванням"
-" у візуальному дизайнері."
+"Фізична ширина етикетки. Використовується як розмір полотна за замовчуванням "
+"у візуальному дизайнері."
 
-#: models.py:62 models.py:122
+#: models.py:61 models.py:121
 msgid "height (mm)"
 msgstr "висота (мм)"
 
-#: models.py:63
+#: models.py:62
 msgid ""
 "Physical label height. Used as the default canvas size in the visual "
 "designer."
 msgstr ""
-"Фізична висота етикетки. Використовується як розмір полотна за замовчуванням"
-" у візуальному дизайнері."
+"Фізична висота етикетки. Використовується як розмір полотна за замовчуванням "
+"у візуальному дизайнері."
 
-#: models.py:67
+#: models.py:66
 msgid "HTML"
 msgstr "HTML"
 
-#: models.py:68
+#: models.py:67
 msgid ""
-"Jinja2 + HTML. Add <div data-netbox-qr></div> where the QR code image should"
-" appear."
+"Jinja2 + HTML. Add <div data-netbox-qr></div> where the QR code image should "
+"appear."
 msgstr ""
 "Jinja2 + HTML. Додайте <div data-netbox-qr></div> там, де має з'являтися "
 "зображення QR-коду."
 
-#: models.py:72
+#: models.py:71
 msgid "CSS"
 msgstr "CSS"
 
-#: models.py:76
+#: models.py:75
 msgid "JavaScript"
 msgstr "JavaScript"
 
-#: models.py:77
+#: models.py:76
 msgid "Runs after the QR code has been drawn. window.NetBoxQR is available."
 msgstr "Виконується після відображення QR-коду. Доступний window.NetBoxQR."
 
-#: models.py:82
+#: models.py:81
 msgid "layout"
 msgstr "макет"
 
-#: models.py:83
+#: models.py:82
 msgid "Visual designer elements. Populated by the visual designer."
 msgstr "Елементи візуального дизайнера. Заповнюється візуальним дизайнером."
 
-#: models.py:88
+#: models.py:87
 msgid "QR template"
 msgstr "шаблон QR"
 
-#: models.py:89
+#: models.py:88
 msgid "QR templates"
 msgstr "шаблони QR"
 
-#: models.py:127
+#: models.py:126
 msgid "QR size preset"
 msgstr "пресет розміру QR"
 
-#: models.py:128
+#: models.py:127
 msgid "QR size presets"
 msgstr "пресети розміру QR"
 
-#: models.py:142
+#: models.py:141
 msgid "show \"Print via…\" button"
 msgstr "показувати кнопку \"Друк за допомогою…\""
 
-#: models.py:144
+#: models.py:143
 msgid ""
-"Offer direct printing to a label printer (Niimbot, Zebra/ZPL, or generic "
-"ESC/POS, over Bluetooth or USB) on rendered QR labels."
+"Offer direct printing to a label printer (Niimbot, Zebra/ZPL, or generic ESC/"
+"POS, over Bluetooth or USB) on rendered QR labels."
 msgstr ""
 "Пропонувати прямий друк на принтер етикеток (Niimbot, Zebra/ZPL або "
 "звичайний ESC/POS, через Bluetooth чи USB) на відрендерених QR-етикетках."
 
-#: models.py:151
-msgid "max bulk print items"
-msgstr "максимум елементів масового друку"
-
-#: models.py:153
-msgid ""
-"Maximum number of objects that can be printed in a single bulk print job "
-"(the \"Bulk print QR\" button on object list pages)."
-msgstr ""
-"Максимальна кількість об'єктів, які можна надрукувати в одному завданні "
-"масового друку (кнопка \"Масовий друк QR\" на сторінках списків об'єктів)."
-
-#: models.py:159 models.py:160
+#: models.py:149 models.py:150
 msgid "QR settings"
 msgstr "налаштування QR"
 
@@ -265,22 +256,13 @@ msgid "Select at least one object first."
 msgstr "Спочатку виберіть хоча б один об'єкт."
 
 #: templates/netbox_labels/inc/bulk_print_button.html:11
-#, python-format
-msgid ""
-"Too many objects selected — the bulk print limit is %(max_bulk_print_items)s"
-" (configurable in QR Settings)."
-msgstr ""
-"Вибрано забагато об'єктів — ліміт масового друку становить "
-"%(max_bulk_print_items)s (налаштовується в QR Settings)."
-
-#: templates/netbox_labels/inc/bulk_print_button.html:13
 msgid ""
 "Select rows below, then click to print all their QR labels in one batch."
 msgstr ""
 "Виберіть рядки нижче, потім натисніть, щоб надрукувати всі їхні QR-етикетки "
 "одним пакетом."
 
-#: templates/netbox_labels/inc/bulk_print_button.html:15
+#: templates/netbox_labels/inc/bulk_print_button.html:13
 #: templates/netbox_labels/qrtemplate_bulk_print.html:5
 #: templates/netbox_labels/qrtemplate_bulk_print.html:11
 #: templates/netbox_labels/qrtemplate_bulk_print_sheet.html:7
@@ -301,7 +283,8 @@ msgstr "Друк"
 #: templates/netbox_labels/inc/object_qr_panel.html:53
 #: templates/netbox_labels/qrtemplate_bulk_print.html:75
 #: templates/netbox_labels/qrtemplate_bulk_print.html:112
-#: templates/netbox_labels/render.html:114 templates/netbox_labels/render.html:120
+#: templates/netbox_labels/render.html:114
+#: templates/netbox_labels/render.html:120
 msgid "Print via…"
 msgstr "Друк за допомогою…"
 
@@ -500,7 +483,7 @@ msgid "Manage presets…"
 msgstr "Керувати пресетами…"
 
 #: templates/netbox_labels/qrtemplate_design.html:107
-#: templates/netbox_labels/settings.html:58
+#: templates/netbox_labels/settings.html:46
 msgid "Save"
 msgstr "Зберегти"
 
@@ -536,15 +519,50 @@ msgstr ""
 msgid "Design visually"
 msgstr "Візуальний дизайн"
 
-#: templates/netbox_labels/settings.html:5 templates/netbox_labels/settings.html:11
+#: templates/netbox_labels/settings.html:5
+#: templates/netbox_labels/settings.html:11
 msgid "QR Settings"
 msgstr "Налаштування QR"
+
+#: views.py:181
+msgid "Could not parse the submitted layout."
+msgstr "Не вдалося розпізнати надісланий макет."
+
+#: views.py:190
+msgid "Design saved."
+msgstr "Дизайн збережено."
+
+#: views.py:320 views.py:359
+msgid "No valid objects were selected."
+msgstr "Не вибрано жодного дійсного об'єкта."
+
+#: views.py:405
+msgid "QR settings saved."
+msgstr "Налаштування QR збережено."
+
+#~ msgid "max bulk print items"
+#~ msgstr "максимум елементів масового друку"
+
+#~ msgid ""
+#~ "Maximum number of objects that can be printed in a single bulk print job "
+#~ "(the \"Bulk print QR\" button on object list pages)."
+#~ msgstr ""
+#~ "Максимальна кількість об'єктів, які можна надрукувати в одному завданні "
+#~ "масового друку (кнопка \"Масовий друк QR\" на сторінках списків об'єктів)."
+
+#, python-format
+#~ msgid ""
+#~ "Too many objects selected — the bulk print limit is "
+#~ "%(max_bulk_print_items)s (configurable in QR Settings)."
+#~ msgstr ""
+#~ "Вибрано забагато об'єктів — ліміт масового друку становить "
+#~ "%(max_bulk_print_items)s (налаштовується в QR Settings)."
 
 #~ msgid ""
 #~ "Offer Bluetooth printing to a Niimbot label printer on rendered QR labels."
 #~ msgstr ""
-#~ "Пропонувати Bluetooth-друк на принтер етикеток Niimbot на відрендерених QR-"
-#~ "етикетках."
+#~ "Пропонувати Bluetooth-друк на принтер етикеток Niimbot на відрендерених "
+#~ "QR-етикетках."
 
 #~ msgid "USB"
 #~ msgstr "USB"

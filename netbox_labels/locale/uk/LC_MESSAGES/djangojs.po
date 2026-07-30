@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-30 09:26+0000\n"
+"POT-Creation-Date: 2026-07-30 16:25+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -16,168 +16,188 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=4; plural=(n % 1 == 0 && n % 10 == 1 && n % 100 != 11 ? 0 : n % 1 == 0 && n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14) ? 1 : n % 1 == 0 && (n % 10 ==0 || (n % 10 >=5 && n % 10 <=9) || (n % 100 >=11 && n % 100 <=14 )) ? 2: 3);\n"
+"Plural-Forms: nplurals=4; plural=(n % 1 == 0 && n % 10 == 1 && n % 100 != "
+"11 ? 0 : n % 1 == 0 && n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % "
+"100 > 14) ? 1 : n % 1 == 0 && (n % 10 ==0 || (n % 10 >=5 && n % 10 <=9) || "
+"(n % 100 >=11 && n % 100 <=14 )) ? 2: 3);\n"
 
-#: static/netbox_labels/qr-bulk-print.js:81
+#: static/netbox_labels/qr-bulk-print.js:87
 msgid "Pending"
 msgstr "Очікує"
 
-#: static/netbox_labels/qr-bulk-print.js:82
+#: static/netbox_labels/qr-bulk-print.js:88
 msgid "Printing…"
 msgstr "Друкується…"
 
-#: static/netbox_labels/qr-bulk-print.js:83
+#: static/netbox_labels/qr-bulk-print.js:89
 msgid "Done"
 msgstr "Готово"
 
-#: static/netbox_labels/qr-bulk-print.js:84
+#: static/netbox_labels/qr-bulk-print.js:90
 msgid "Failed"
 msgstr "Помилка"
 
-#: static/netbox_labels/qr-bulk-print.js:133
+#: static/netbox_labels/qr-bulk-print.js:139
 msgid "Timed out waiting for the label to render."
 msgstr "Час очікування рендерингу етикетки вичерпано."
 
-#: static/netbox_labels/qr-bulk-print.js:153
+#: static/netbox_labels/qr-bulk-print.js:159
 msgid "Could not decode the rendered label image."
 msgstr "Не вдалося декодувати зображення відрендереної етикетки."
 
 #: static/netbox_labels/qr-designer.js:182
+#: static/netbox_labels/qr-designer.js:185
 msgid "(empty)"
 msgstr "(порожньо)"
 
-#: static/netbox_labels/qr-designer.js:233
+#: static/netbox_labels/qr-designer.js:234
 msgid "Image"
 msgstr "Зображення"
 
-#: static/netbox_labels/qr-designer.js:264
+#: static/netbox_labels/qr-designer.js:265
 msgid "Delete"
 msgstr "Видалити"
 
-#: static/netbox_labels/qr-designer.js:336
+#: static/netbox_labels/qr-designer.js:337
 msgid "Select an element to edit its properties."
 msgstr "Виберіть елемент для редагування його властивостей."
 
-#: static/netbox_labels/qr-designer.js:341
+#: static/netbox_labels/qr-designer.js:342
 msgid "X (mm)"
 msgstr "X (мм)"
 
-#: static/netbox_labels/qr-designer.js:342
+#: static/netbox_labels/qr-designer.js:343
 msgid "Y (mm)"
 msgstr "Y (мм)"
 
-#: static/netbox_labels/qr-designer.js:343
+#: static/netbox_labels/qr-designer.js:344
 msgid "Width (mm)"
 msgstr "Ширина (мм)"
 
-#: static/netbox_labels/qr-designer.js:344
+#: static/netbox_labels/qr-designer.js:345
 msgid "Height (mm)"
 msgstr "Висота (мм)"
 
-#: static/netbox_labels/qr-designer.js:347
+#: static/netbox_labels/qr-designer.js:348
 msgid "Error correction"
 msgstr "Корекція помилок"
 
-#: static/netbox_labels/qr-designer.js:348
+#: static/netbox_labels/qr-designer.js:349
 msgid "least redundant, smallest modules"
 msgstr "найменш надлишковий, найменші модулі"
 
-#: static/netbox_labels/qr-designer.js:349
+#: static/netbox_labels/qr-designer.js:350
 msgid "most redundant"
 msgstr "найбільш надлишковий"
 
-#: static/netbox_labels/qr-designer.js:357
+#: static/netbox_labels/qr-designer.js:358
 msgid "Replace image"
 msgstr "Замінити зображення"
 
-#: static/netbox_labels/qr-designer.js:360
+#: static/netbox_labels/qr-designer.js:361
 msgid "Content"
 msgstr "Вміст"
 
-#: static/netbox_labels/qr-designer.js:361
+#: static/netbox_labels/qr-designer.js:362
 msgid "Object (works for every type)"
 msgstr "Об'єкт (працює для будь-якого типу)"
 
-#: static/netbox_labels/qr-designer.js:362
+#: static/netbox_labels/qr-designer.js:363
 msgid "Object type"
 msgstr "Тип об'єкта"
 
-#: static/netbox_labels/qr-designer.js:363
+#: static/netbox_labels/qr-designer.js:364
 msgid "Static text"
 msgstr "Статичний текст"
 
-#: static/netbox_labels/qr-designer.js:364
+#: static/netbox_labels/qr-designer.js:365
+msgid "Formatted text"
+msgstr "Форматований текст"
+
+#: static/netbox_labels/qr-designer.js:366
 msgid "Custom Jinja2 expression"
 msgstr "Власний вираз Jinja2"
 
-#: static/netbox_labels/qr-designer.js:367
+#: static/netbox_labels/qr-designer.js:369
 msgid "Text"
 msgstr "Текст"
 
-#: static/netbox_labels/qr-designer.js:370
+#: static/netbox_labels/qr-designer.js:373
+msgid "Format"
+msgstr "Формат"
+
+#: static/netbox_labels/qr-designer.js:374
+msgid ""
+"Mix literal text with ${expr} placeholders, e.g. \"IP - ${object.primary_ip}"
+"\""
+msgstr ""
+"Поєднуйте звичайний текст із плейсхолдерами ${expr}, напр. \"IP - ${object."
+"primary_ip}\""
+
+#: static/netbox_labels/qr-designer.js:378
 msgid "Expression"
 msgstr "Вираз"
 
-#: static/netbox_labels/qr-designer.js:372
+#: static/netbox_labels/qr-designer.js:380
 msgid "Font size (mm)"
 msgstr "Розмір шрифту (мм)"
 
-#: static/netbox_labels/qr-designer.js:373
+#: static/netbox_labels/qr-designer.js:381
 msgid "Weight"
 msgstr "Насиченість"
 
-#: static/netbox_labels/qr-designer.js:373
+#: static/netbox_labels/qr-designer.js:381
 msgid "Normal"
 msgstr "Звичайний"
 
-#: static/netbox_labels/qr-designer.js:373
+#: static/netbox_labels/qr-designer.js:381
 msgid "Bold"
 msgstr "Жирний"
 
-#: static/netbox_labels/qr-designer.js:374
+#: static/netbox_labels/qr-designer.js:382
 msgid "Color"
 msgstr "Колір"
 
-#: static/netbox_labels/qr-designer.js:375
+#: static/netbox_labels/qr-designer.js:383
 msgid "Align"
 msgstr "Вирівнювання"
 
-#: static/netbox_labels/qr-designer.js:375
+#: static/netbox_labels/qr-designer.js:383
 msgid "Left"
 msgstr "Ліворуч"
 
-#: static/netbox_labels/qr-designer.js:375
+#: static/netbox_labels/qr-designer.js:383
 msgid "Center"
 msgstr "По центру"
 
-#: static/netbox_labels/qr-designer.js:375
+#: static/netbox_labels/qr-designer.js:383
 msgid "Right"
 msgstr "Праворуч"
 
-#: static/netbox_labels/qr-designer.js:376
+#: static/netbox_labels/qr-designer.js:384
 msgid "Transform"
 msgstr "Перетворення"
 
-#: static/netbox_labels/qr-designer.js:377
+#: static/netbox_labels/qr-designer.js:385
 msgid "None"
 msgstr "Немає"
 
-#: static/netbox_labels/qr-designer.js:377
+#: static/netbox_labels/qr-designer.js:385
 msgid "UPPERCASE"
 msgstr "ВЕЛИКІ ЛІТЕРИ"
 
-#: static/netbox_labels/qr-designer.js:377
+#: static/netbox_labels/qr-designer.js:385
 msgid "lowercase"
 msgstr "маленькі літери"
 
-#: static/netbox_labels/qr-designer.js:377
+#: static/netbox_labels/qr-designer.js:385
 msgid "Capitalize"
 msgstr "З великої літери"
 
-#: static/netbox_labels/qr-designer.js:379
+#: static/netbox_labels/qr-designer.js:387
 msgid "Letter spacing (mm)"
 msgstr "Міжлітерний інтервал (мм)"
 
-#: static/netbox_labels/qr-designer.js:384
+#: static/netbox_labels/qr-designer.js:392
 msgid "Delete element"
 msgstr "Видалити елемент"
