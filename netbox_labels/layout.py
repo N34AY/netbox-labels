@@ -44,6 +44,11 @@ from .models import DEFAULT_HEIGHT_MM, DEFAULT_WIDTH_MM
 # text rather than swallowing the rest of the string.
 _FORMAT_PLACEHOLDER_RE = re.compile(r'\$\{([^}]*)\}')
 
+_LOREM_IPSUM = (
+    'Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod '
+    'tempor incididunt ut labore et dolore magna aliqua'
+)
+
 
 def _num(value, default):
     try:
@@ -52,7 +57,29 @@ def _num(value, default):
         return default
 
 
-def _render_format_string(format_str):
+def _placeholder_filler(element):
+    """A chunk of filler text sized to roughly fill this text element's own
+    width — shown (via a Jinja2 "default" filter) in place of a "custom"/
+    "format" binding's expression when it evaluates to Undefined, e.g. when
+    previewing with placeholder data and the expression references an
+    attribute (like object.primary_ip) that the placeholder object doesn't
+    have. Without this the element just renders blank, giving no sense of
+    how much text — and therefore how much of the box, or overflow — a real
+    value would actually take up."""
+    width_mm = _num(element.get('width_mm'), 20) or 20
+    font_size_mm = _num(element.get('font_size_mm'), 3) or 3
+    avg_char_width_mm = font_size_mm * 0.55  # rough average glyph width for a proportional font
+    max_chars = max(3, round(width_mm / avg_char_width_mm))
+    repeated = _LOREM_IPSUM * (max_chars // len(_LOREM_IPSUM) + 1)
+    return repeated[:max_chars]
+
+
+def _jinja_str_literal(value):
+    """Encode a plain string as Jinja2 single-quoted string-literal source."""
+    return "'" + value.replace('\\', '\\\\').replace("'", "\\'") + "'"
+
+
+def _render_format_string(format_str, element):
     """Turn a JS-template-literal-style string (literal text with ${expr}
     placeholders, e.g. "Ip - ${object.primary_ip}") into Jinja2 source: each
     ${expr} becomes a {{ expr }} expression (evaluated — and, since html_code
@@ -61,13 +88,16 @@ def _render_format_string(format_str):
     {% raw %} so it can't be misread as further Jinja2 syntax itself."""
     parts = []
     pos = 0
+    filler_literal = None
     for match in _FORMAT_PLACEHOLDER_RE.finditer(format_str):
         literal = format_str[pos:match.start()]
         if literal:
             parts.append('{% raw %}' + escape(literal) + '{% endraw %}')
         expr = match.group(1).strip()
         if expr:
-            parts.append('{{ ' + expr + ' }}')
+            if filler_literal is None:
+                filler_literal = _jinja_str_literal(_placeholder_filler(element))
+            parts.append('{{ (' + expr + ')|default(' + filler_literal + ') }}')
         pos = match.end()
     trailing = format_str[pos:]
     if trailing:
@@ -87,9 +117,16 @@ def _text_content(element):
     if binding == 'object_type':
         return '{{ object_type.model }}'
     if binding == 'custom':
-        return '{{ ' + element.get('expr', '') + ' }}'
+        expr = element.get('expr', '').strip()
+        if not expr:
+            # No expression typed yet (e.g. the binding was just switched to
+            # "custom" in the designer) — "{{ () }}" would be valid-but-wrong
+            # Jinja2 (an empty tuple), and bare "{{ }}" is a syntax error.
+            return ''
+        filler_literal = _jinja_str_literal(_placeholder_filler(element))
+        return '{{ (' + expr + ')|default(' + filler_literal + ') }}'
     if binding == 'format':
-        return _render_format_string(element.get('format', ''))
+        return _render_format_string(element.get('format', ''), element)
     return ''
 
 
