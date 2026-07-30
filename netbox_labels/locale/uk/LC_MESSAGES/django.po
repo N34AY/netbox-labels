@@ -201,10 +201,6 @@ msgstr ""
 msgid "QR settings"
 msgstr "налаштування QR"
 
-#: navigation.py:6 navigation.py:9
-msgid "QR Коди"
-msgstr "QR Коди"
-
 #: navigation.py:12
 msgid "Templates"
 msgstr "Шаблони"
@@ -269,6 +265,7 @@ msgstr ""
 msgid "Bulk print QR"
 msgstr "Масовий друк QR"
 
+#: navigation.py:6 navigation.py:9
 #: templates/netbox_labels/inc/object_qr_panel.html:4
 msgid "QR Codes"
 msgstr "QR-коди"
@@ -542,7 +539,7 @@ msgstr "Пошук…"
 
 #: templates/netbox_labels/qrtemplate_design.html:175
 msgid "Object data (debug)"
-msgstr ""
+msgstr "Дані об'єкта (налагодження)"
 
 #: templates/netbox_labels/qrtemplate_edit.html:9
 msgid ""

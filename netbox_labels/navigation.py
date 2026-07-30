@@ -3,10 +3,10 @@ from netbox.choices import ButtonColorChoices
 from netbox.plugins import PluginMenu, PluginMenuButton, PluginMenuItem
 
 menu = PluginMenu(
-    label=_('QR Коди'),
+    label=_('QR Codes'),
     icon_class='mdi mdi-qrcode',
     groups=(
-        (_('QR Коди'), (
+        (_('QR Codes'), (
             PluginMenuItem(
                 link='plugins:netbox_labels:qrtemplate_list',
                 link_text=_('Templates'),
