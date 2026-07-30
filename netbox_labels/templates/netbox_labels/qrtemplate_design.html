@@ -163,6 +163,7 @@
             </div>
           </div>
           <div class="col-lg-8">
+            <div class="alert alert-danger d-none netbox-qr-preview-error" id="qr-preview-error"></div>
             <iframe id="qr-preview-iframe" style="width: 100%; height: 60vh; border: 1px solid var(--tblr-border-color, #ccc); background: #fff;"></iframe>
             <div class="mt-2 d-none" id="qr-preview-data-wrapper">
               <button
@@ -196,6 +197,14 @@
     white-space: pre-wrap;
     word-break: break-all;
     margin-bottom: 0;
+  }
+  .netbox-qr-preview-error {
+    font-family: ui-monospace, Menlo, Consolas, monospace;
+    font-size: 0.8125rem;
+    white-space: pre-wrap;
+    word-break: break-all;
+    max-height: 8rem;
+    overflow: auto;
   }
 </style>
 

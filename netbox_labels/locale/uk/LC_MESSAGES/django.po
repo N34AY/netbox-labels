@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-30 16:26+0000\n"
+"POT-Creation-Date: 2026-07-30 16:57+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -507,6 +507,10 @@ msgstr "Реальний об'єкт"
 msgid "Search…"
 msgstr "Пошук…"
 
+#: templates/netbox_labels/qrtemplate_design.html:175
+msgid "Object data (debug)"
+msgstr ""
+
 #: templates/netbox_labels/qrtemplate_edit.html:9
 msgid ""
 "The HTML/CSS/JS fields above can also be edited without code, using the "
@@ -518,6 +522,10 @@ msgstr ""
 #: templates/netbox_labels/qrtemplate_edit.html:14
 msgid "Design visually"
 msgstr "Візуальний дизайн"
+
+#: templates/netbox_labels/render.html:157
+msgid "Template error"
+msgstr "Помилка шаблону"
 
 #: templates/netbox_labels/settings.html:5
 #: templates/netbox_labels/settings.html:11
@@ -532,11 +540,11 @@ msgstr "Не вдалося розпізнати надісланий макет
 msgid "Design saved."
 msgstr "Дизайн збережено."
 
-#: views.py:320 views.py:359
+#: views.py:335 views.py:374
 msgid "No valid objects were selected."
 msgstr "Не вибрано жодного дійсного об'єкта."
 
-#: views.py:405
+#: views.py:420
 msgid "QR settings saved."
 msgstr "Налаштування QR збережено."
 

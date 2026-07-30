@@ -247,19 +247,34 @@ class QRTemplatePreviewView(LoginRequiredMixin, PermissionRequiredMixin, View):
 
         preview_template = QRTemplate(html_code=html_code, css_code=css_code, qr_value=qr_value)
 
-        if content_type_id and object_id:
-            content_type = get_object_or_404(ContentType, pk=content_type_id)
-            model = content_type.model_class()
-            if model is None:
-                raise Http404
-            instance = get_object_or_404(model.objects.restrict(request.user, 'view'), pk=object_id)
-            context = rendering.render_template(preview_template, instance, request)
-        else:
-            context = rendering.render_placeholder(preview_template, request)
+        # A broken binding (bad Jinja2 syntax, a typo'd attribute chain that
+        # raises instead of resolving to Undefined, etc.) would otherwise
+        # bubble up as an unhandled exception here — a 500 page with no
+        # label and no indication of what's wrong. Since this view only ever
+        # backs the designer's own live preview (never an actual printed
+        # label), it's caught and surfaced in the response instead, so the
+        # preview can show the user exactly what broke.
+        render_error = None
+        try:
+            if content_type_id and object_id:
+                content_type = get_object_or_404(ContentType, pk=content_type_id)
+                model = content_type.model_class()
+                if model is None:
+                    raise Http404
+                instance = get_object_or_404(model.objects.restrict(request.user, 'view'), pk=object_id)
+                context = rendering.render_template(preview_template, instance, request)
+            else:
+                context = rendering.render_placeholder(preview_template, request)
+        except Http404:
+            raise
+        except Exception as e:
+            render_error = f'{e.__class__.__name__}: {e}'
+            context = {'qr_value': '', 'body_html': '', 'css_code': css_code, 'js_code': '', 'object_data': {}}
 
         context['qr_template'] = qr_template
         context['show_niimbot_button'] = False
         context['preview_mode'] = True
+        context['render_error'] = render_error
         context['netbox_labels_meta'] = {
             'value': context['qr_value'],
             'objectType': None,

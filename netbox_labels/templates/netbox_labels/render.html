@@ -152,7 +152,14 @@
   }
 </script>
 
-<div id="netbox-qr-root">{{ body_html|safe }}</div>
+{% if render_error %}
+  <div style="position:fixed;inset:0;margin:0;padding:0.75rem;box-sizing:border-box;background:#fff3f3;color:#842029;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:0.8rem;white-space:pre-wrap;overflow:auto;border:2px solid #dc3545;">
+    <strong>{% trans "Template error" %}</strong><br>{{ render_error }}
+  </div>
+  {{ render_error|json_script:"netbox-qr-render-error" }}
+{% else %}
+  <div id="netbox-qr-root">{{ body_html|safe }}</div>
+{% endif %}
 
 {{ object_data|json_script:"netbox-qr-object-data" }}
 {{ netbox_labels_meta|json_script:"netbox-qr-meta" }}
@@ -222,6 +229,11 @@
   // fight any CSS-based centering of the root element.
   function netboxQrScalePreview() {
     var root = document.getElementById('netbox-qr-root');
+    if (!root) {
+      // Not present when render_error is set — the error banner takes its
+      // place instead, and doesn't need this zoom/center treatment.
+      return;
+    }
     root.style.transform = 'none';
     var rect = root.getBoundingClientRect();
     if (!rect.width || !rect.height) {

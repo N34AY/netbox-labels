@@ -53,6 +53,7 @@
 	var previewIframe = document.getElementById('qr-preview-iframe');
 	var previewDataWrapper = document.getElementById('qr-preview-data-wrapper');
 	var previewDataJson = document.getElementById('qr-preview-data-json');
+	var previewErrorEl = document.getElementById('qr-preview-error');
 
 	function effectiveScale() {
 		return BASE_PX_PER_MM * zoom;
@@ -658,24 +659,38 @@
 					return;
 				}
 				previewIframe.srcdoc = html;
-				showPreviewData(isRealObject, html);
+				showPreviewResult(isRealObject, html);
 			});
 	}
 
 	// The rendered HTML (netbox_labels/render.html) already embeds the
-	// object's serialized data via json_script — parsed straight out of the
-	// already-fetched HTML string (not read back out of the iframe after the
-	// fact: srcdoc's 'load' event timing turned out not reliable enough to
-	// depend on here) and shown collapsed by default behind a toggle, so
-	// template authors can check exact field names/values (e.g. for a
-	// "custom"/"format" binding expression) without cluttering the preview.
-	function showPreviewData(isRealObject, html) {
+	// object's serialized data (and, if rendering failed, the error) via
+	// json_script — parsed straight out of the already-fetched HTML string
+	// (not read back out of the iframe after the fact: srcdoc's 'load' event
+	// timing turned out not reliable enough to depend on here).
+	function showPreviewResult(isRealObject, html) {
+		var doc = new DOMParser().parseFromString(html, 'text/html');
+
+		// A broken binding (bad Jinja2 syntax, an expression that raises
+		// instead of resolving) leaves no label to show at all — surface
+		// exactly what went wrong instead of a blank preview, same as the
+		// object-data debug panel does for looking up field names, except
+		// shown immediately (not collapsed) since it needs the user's
+		// attention. Applies in both placeholder and real-object mode.
+		var errorEl = doc.getElementById('netbox-qr-render-error');
+		if (errorEl) {
+			previewErrorEl.textContent = JSON.parse(errorEl.textContent);
+			previewErrorEl.classList.remove('d-none');
+			previewDataWrapper.classList.add('d-none');
+			return;
+		}
+		previewErrorEl.classList.add('d-none');
+
 		if (!isRealObject) {
 			previewDataWrapper.classList.add('d-none');
 			return;
 		}
 		try {
-			var doc = new DOMParser().parseFromString(html, 'text/html');
 			var el = doc.getElementById('netbox-qr-object-data');
 			var data = el ? JSON.parse(el.textContent) : {};
 			previewDataJson.textContent = JSON.stringify(data, null, 2);
