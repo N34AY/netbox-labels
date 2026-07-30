@@ -1,0 +1,173 @@
+{% extends 'base/layout.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "Bulk print QR" %}{% endblock %}
+
+{% block header %}
+  <div class="page-header m-0">
+    <div class="container-fluid mt-2 mb-2 d-print-none">
+      <div class="d-flex justify-content-between align-items-center">
+        <h1 class="page-title">{% trans "Bulk print QR" %}</h1>
+        {% if settings.DOCS_ROOT %}
+          <a
+            href="{% static 'docs/models/netbox_qr/qrtemplate/' %}"
+            target="_blank"
+            rel="noopener"
+            class="btn btn-outline-secondary"
+            title="{% trans 'View documentation' %}"
+          >
+            <i class="mdi mdi-help-circle" aria-hidden="true"></i> {% trans "Help" %}
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block content %}
+{% csrf_token %}
+<div id="qr-bulk-print">
+  <div class="row mb-3">
+    <div class="col-md-6">
+      <div class="card h-100">
+        <h5 class="card-header">{% trans "1. Choose a template" %}</h5>
+        <div class="card-body">
+          {% if qr_templates %}
+            <div class="list-group" id="qr-bulk-template-list">
+              {% for tpl in qr_templates %}
+                <button type="button" class="list-group-item list-group-item-action" data-template-id="{{ tpl.pk }}">
+                  <div class="d-flex justify-content-between">
+                    <strong>{{ tpl.name }}</strong>
+                    <span class="text-muted">{{ tpl.width_mm }} × {{ tpl.height_mm }} mm</span>
+                  </div>
+                  {% if tpl.description %}
+                    <div class="text-muted small">{{ tpl.description }}</div>
+                  {% endif %}
+                </button>
+              {% endfor %}
+            </div>
+          {% else %}
+            <p class="text-muted mb-0">{% trans "No active templates apply to this object type." %}</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card h-100">
+        <h5 class="card-header">{% trans "Preview" %}</h5>
+        <div class="card-body d-flex align-items-center justify-content-center" style="min-height: 12rem;">
+          <iframe id="qr-bulk-preview-iframe" style="width: 100%; height: 12rem; border: 1px solid var(--tblr-border-color, #ccc); background: #fff; display: none;"></iframe>
+          <p class="text-muted mb-0" id="qr-bulk-preview-placeholder">{% trans "Select a template to preview it." %}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-3">
+    <h5 class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <span>{% trans "2. Objects" %} (<span id="qr-bulk-progress-count">0</span> / {{ objects|length }})</span>
+      <div class="btn-list">
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="qr-bulk-reset-btn">
+          <i class="mdi mdi-restore"></i> {% trans "Reset" %}
+        </button>
+        <button type="button" class="btn btn-sm btn-primary" id="qr-bulk-print-btn" data-bs-toggle="modal" data-bs-target="#qr-bulk-print-modal" disabled>
+          <i class="mdi mdi-printer-pos"></i> {% trans "Print via…" %}
+        </button>
+      </div>
+    </h5>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead>
+            <tr>
+              <th>{% trans "Object" %}</th>
+              <th>{% trans "Status" %}</th>
+            </tr>
+          </thead>
+          <tbody id="qr-bulk-status-body">
+            {% for obj in objects %}
+              <tr id="qr-bulk-row-{{ obj.pk }}">
+                <td>{{ obj }}</td>
+                <td><span class="badge text-bg-secondary" id="qr-bulk-status-{{ obj.pk }}">{% trans "Pending" %}</span></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card-footer" id="qr-bulk-error-footer" style="display: none;">
+      <div class="text-danger mb-2" id="qr-bulk-error-message"></div>
+      <button type="button" class="btn btn-sm btn-warning" id="qr-bulk-continue-btn">
+        <i class="mdi mdi-play"></i> {% trans "Continue" %}
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="qr-bulk-print-modal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">{% trans "Print via…" %}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{% trans 'Close' %}"></button>
+      </div>
+      <div id="qr-bulk-driver-options" class="modal-body d-flex flex-column gap-2">
+        <button type="button" class="btn btn-outline-primary text-start" onclick="netboxQrBulkShowPageFormats()">
+          <i class="mdi mdi-printer"></i> {% trans "Default printer (browser)" %}
+        </button>
+        {% if show_niimbot_button %}
+          <hr class="my-1">
+          <button type="button" class="btn btn-outline-primary text-start" data-bs-dismiss="modal" onclick="netboxQrBulkStart('niimbot', 'bluetooth')">
+            <i class="mdi mdi-bluetooth"></i> {% trans "Niimbot (Bluetooth)" %}
+          </button>
+          <button type="button" class="btn btn-outline-primary text-start" data-bs-dismiss="modal" onclick="netboxQrBulkStart('niimbot', 'serial')">
+            <i class="mdi mdi-usb"></i> {% trans "Niimbot (USB)" %}
+          </button>
+          <button type="button" class="btn btn-outline-primary text-start" data-bs-dismiss="modal" onclick="netboxQrBulkStart('zpl', 'serial')">
+            <i class="mdi mdi-printer-3d"></i> {% trans "Zebra — ZPL (USB)" %}
+          </button>
+          <button type="button" class="btn btn-outline-primary text-start" data-bs-dismiss="modal" onclick="netboxQrBulkStart('escpos', 'serial')">
+            <i class="mdi mdi-printer"></i> {% trans "Generic — ESC/POS (USB)" %}
+          </button>
+        {% endif %}
+      </div>
+      <div id="qr-bulk-page-format-options" class="modal-body d-none flex-column gap-2">
+        <p class="text-muted small mb-0">{% trans "As many labels as fit are combined per page." %}</p>
+        {% for key, fmt in page_formats.items %}
+          <button type="button" class="btn btn-outline-primary text-start" data-bs-dismiss="modal" onclick="netboxQrBulkPrintSheet('{{ key }}')">
+            {{ fmt.label }}
+          </button>
+        {% endfor %}
+        <button type="button" class="btn btn-sm btn-link" onclick="netboxQrBulkShowDriverOptions()">
+          <i class="mdi mdi-arrow-left"></i> {% trans "Back" %}
+        </button>
+      </div>
+      <div class="modal-footer justify-content-start py-2">
+        <a href="https://github.com/N34AY/netbox-labels/issues/new" target="_blank" rel="noopener" class="small">
+          <i class="mdi mdi-bug-outline"></i> {% trans "Report a bug / request device support" %}
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<iframe id="qr-bulk-worker-iframe" style="display: none;"></iframe>
+
+{{ objects_json|json_script:"qr-bulk-objects-data" }}
+<script>
+  window.NETBOX_QR_BULK_RENDER_URL_TEMPLATE = "{% url 'plugins:netbox_qr:render_qr' content_type.pk 0 0 %}";
+  window.NETBOX_QR_BULK_SHEET_URL = "{% url 'plugins:netbox_qr:qrbulk_print_sheet' %}";
+  window.NETBOX_QR_BULK_CONTENT_TYPE_ID = {{ content_type.pk }};
+</script>
+
+<script src="{% static 'netbox_qr/qr-print-common.js' %}"></script>
+{% if show_niimbot_button %}
+  <script src="{% static 'netbox_qr/niimbluelib.min.js' %}"></script>
+  <script src="{% static 'netbox_qr/niimbot-print.js' %}"></script>
+  <script src="{% static 'netbox_qr/escpos-print.js' %}"></script>
+  <script src="{% static 'netbox_qr/zpl-print.js' %}"></script>
+{% endif %}
+<script src="{% url 'plugins:netbox_qr:javascript_catalog' %}"></script>
+<script src="{% static 'netbox_qr/qr-bulk-print.js' %}"></script>
+{% endblock %}

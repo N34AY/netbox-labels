@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=64.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "netbox-qr"
+version = "0.1.0"
+description = "QR code templates for NetBox objects"
+readme = "README.md"
+license = "Apache-2.0"
+requires-python = ">=3.12"
+authors = [
+    { name = "Dmytro Penziakov" },
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Framework :: Django",
+    "Intended Audience :: System Administrators",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: System :: Networking",
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/N34AY/netbox-labels"
+Repository = "https://github.com/N34AY/netbox-labels"
+Issues = "https://github.com/N34AY/netbox-labels/issues"
+
+[project.optional-dependencies]
+dev = ["ruff"]
+
+[tool.setuptools.packages.find]
+include = ["netbox_qr*"]
+
+[tool.setuptools.package-data]
+netbox_qr = [
+    "templates/**/*",
+    "static/**/*",
+    "migrations/*",
+    "locale/**/*",
+]

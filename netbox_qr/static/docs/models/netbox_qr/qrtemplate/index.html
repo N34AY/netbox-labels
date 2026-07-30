@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>QR Template — NetBox QR</title>
+<style>
+  :root { color-scheme: light dark; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+    max-width: 46rem;
+    margin: 2rem auto;
+    padding: 0 1.25rem;
+    color: #1a1a1a;
+    background: #fff;
+  }
+  @media (prefers-color-scheme: dark) {
+    body { color: #e6e6e6; background: #16181d; }
+    code, pre { background: #262a33 !important; color: #e6e6e6 !important; }
+    table { border-color: #3a3f4b !important; }
+    th, td { border-color: #3a3f4b !important; }
+    a { color: #6fb1fc; }
+  }
+  h1 { font-size: 1.7rem; margin-bottom: 0.25rem; }
+  h2 { font-size: 1.25rem; margin-top: 2.25rem; border-bottom: 1px solid #ddd; padding-bottom: 0.35rem; }
+  h3 { font-size: 1.05rem; margin-top: 1.5rem; }
+  code {
+    background: #f2f2f2;
+    padding: 0.1rem 0.35rem;
+    border-radius: 3px;
+    font-size: 0.9em;
+  }
+  pre {
+    background: #f2f2f2;
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    overflow-x: auto;
+  }
+  pre code { background: none; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
+  th, td { border: 1px solid #ddd; padding: 0.4rem 0.6rem; text-align: left; vertical-align: top; }
+  th { background: rgba(127,127,127,0.08); }
+  .lead { color: #666; }
+  @media (prefers-color-scheme: dark) { .lead { color: #a0a0a0; } }
+</style>
+</head>
+<body>
+
+<h1>QR Template</h1>
+<p class="lead">Part of the <a href="https://github.com/netbox-community/netbox-docker" target="_blank" rel="noopener">NetBox QR</a> plugin.</p>
+
+<p>
+  A <strong>QR Template</strong> defines an HTML/CSS/JS label — plus a Jinja2 expression for what the
+  QR code itself encodes — for one or more NetBox object types. Once a template is created, NetBox
+  shows a "QR Codes" panel on the detail page of every object it applies to, letting you preview,
+  print via the browser, or print directly to a label printer — Niimbot, Zebra, or any generic
+  ESC/POS printer — over Bluetooth or USB.
+</p>
+
+<h2>Fields</h2>
+
+<h3>Name</h3>
+<p>A unique name for the template.</p>
+
+<h3>Slug</h3>
+<p>A unique URL-friendly identifier, generated automatically from the name.</p>
+
+<h3>Description</h3>
+<p>A short description of the template's purpose (optional).</p>
+
+<h3>Active</h3>
+<p>Inactive templates are hidden from object detail panels and cannot be rendered.</p>
+
+<h3>Apply to all object types</h3>
+<p>
+  When enabled, the template is offered for every object type in NetBox, and the
+  <strong>Object types</strong> selection below is ignored.
+</p>
+
+<h3>Object types</h3>
+<p>
+  The specific object type(s) (e.g. <code>dcim.device</code>, <code>dcim.cable</code>) this template
+  applies to. At least one type must be selected unless <strong>Apply to all object types</strong> is
+  enabled.
+</p>
+
+<h3>QR code value</h3>
+<p>
+  A Jinja2 expression evaluated against the object being rendered, producing the data encoded in the
+  QR code. Defaults to <code>{{ object_url }}</code> — the object's absolute NetBox URL, so
+  scanning the code opens that object.
+</p>
+
+<h3>HTML</h3>
+<p>
+  Jinja2 + HTML for the label body. Add <code>&lt;div data-netbox-qr&gt;&lt;/div&gt;</code> anywhere the
+  QR code image itself should appear — it's filled in automatically by the bundled QR library.
+</p>
+
+<h3>CSS</h3>
+<p>Styles for the label. For printed labels, size the page precisely with real physical units, e.g.:</p>
+<pre><code>@page { size: 40mm 12mm; margin: 0; }
+html, body { width: 40mm; height: 12mm; }</code></pre>
+
+<h3>JavaScript</h3>
+<p>Runs after the QR code has been drawn. See <a href="#javascript-api">JavaScript API</a> below.</p>
+
+<h2>Jinja2 context</h2>
+<p>Available in the <strong>HTML</strong> and <strong>QR code value</strong> fields:</p>
+<table>
+  <tr><th>Variable</th><th>Description</th></tr>
+  <tr><td><code>object</code></td><td>The model instance being rendered (e.g. a <code>Device</code> or <code>Cable</code>). Use <code>{{ object }}</code> for its display string — this works for every object type, unlike <code>{{ object.name }}</code>, which some models (like Cable) don't have.</td></tr>
+  <tr><td><code>object_type</code></td><td>The object's <code>ContentType</code> (e.g. <code>{{ object_type.model }}</code> gives <code>"device"</code>).</td></tr>
+  <tr><td><code>object_url</code></td><td>Absolute URL to the object's NetBox detail page.</td></tr>
+  <tr><td><code>object_data</code></td><td>The object serialized the same way the REST API would return it.</td></tr>
+</table>
+
+<h2 id="javascript-api">JavaScript API</h2>
+<p>Available once the page has loaded:</p>
+<table>
+  <tr><th>Global</th><th>Description</th></tr>
+  <tr><td><code>window.NetBoxQR.value</code></td><td>The rendered QR code value.</td></tr>
+  <tr><td><code>window.NetBoxQR.objectType</code></td><td>The object's content type, as <code>"app_label.model"</code>.</td></tr>
+  <tr><td><code>window.NetBoxQR.objectId</code></td><td>The object's primary key.</td></tr>
+  <tr><td><code>window.NetBoxQR.objectData</code></td><td>Same as the Jinja2 <code>object_data</code> variable, as JSON.</td></tr>
+</table>
+<p>
+  Any <code>[data-netbox-qr]</code> element is filled with a scannable QR code automatically. Optional
+  attributes on that element:
+</p>
+<table>
+  <tr><th>Attribute</th><th>Default</th><th>Description</th></tr>
+  <tr><td><code>data-value</code></td><td><code>NetBoxQR.value</code></td><td>Override what this specific code encodes.</td></tr>
+  <tr><td><code>data-width</code> / <code>data-height</code></td><td><code>200</code></td><td>Canvas size in pixels. For print labels, render at a higher resolution than the CSS box (e.g. matching the printer's DPI) and let CSS scale it down — see the bundled "Niimbot D110 Label" template.</td></tr>
+  <tr><td><code>data-color-dark</code> / <code>data-color-light</code></td><td><code>#000000</code> / <code>#ffffff</code></td><td>QR module colors.</td></tr>
+  <tr><td><code>data-correct-level</code></td><td><code>H</code></td><td>Error-correction level (<code>L</code>/<code>M</code>/<code>Q</code>/<code>H</code>). Lower levels need fewer modules for the same data — useful for keeping small physical labels scannable.</td></tr>
+</table>
+
+<h2>Where templates appear</h2>
+<ul>
+  <li>A "QR Codes" panel on the detail page of every object type the template applies to, showing a live preview at the label's true rendered size plus <strong>Print</strong> / <strong>Print via…</strong> buttons.</li>
+  <li>A standalone render page at <code>/plugins/qr/render/&lt;content_type_id&gt;/&lt;object_id&gt;/&lt;template_id&gt;/</code>.</li>
+</ul>
+
+<h2>Printing to a label printer</h2>
+<p>
+  The <strong>Print via…</strong> button (hidden if disabled in <a href="../../../../../plugins/qr/settings/">QR Settings</a>)
+  opens a small picker offering direct printing to a label printer, bypassing the OS print dialog
+  entirely. Four drivers are supported:
+</p>
+<table>
+  <tr><th>Driver</th><th>Transport</th><th>Notes</th></tr>
+  <tr>
+    <td><strong>Niimbot</strong></td>
+    <td>Bluetooth or USB</td>
+    <td>
+      Uses the community <a href="https://github.com/MultiMote/niimbluelib" target="_blank" rel="noopener">niimbluelib</a>
+      project, which auto-detects the correct protocol for the connected model. Covers essentially
+      the full current Niimbot lineup (D11/D110, B1/B21 series, H1S, and dozens more) — see the
+      library's <code>PrinterModel</code> enum for the exact list. It's a pinned/vendored snapshot,
+      so brand-new models released after that snapshot won't be recognized until it's updated.
+    </td>
+  </tr>
+  <tr>
+    <td><strong>Zebra — ZPL</strong></td>
+    <td>USB only</td>
+    <td>Generates <a href="https://en.wikipedia.org/wiki/Zebra_Programming_Language" target="_blank" rel="noopener">ZPL</a> (<code>^GFA</code> graphic field), the language spoken by Zebra's desktop/industrial printers (GC/GX/ZD/GK series and similar).</td>
+  </tr>
+  <tr>
+    <td><strong>Generic — ESC/POS</strong></td>
+    <td>USB only</td>
+    <td>Generates a raw ESC/POS raster bit image (<code>GS v 0</code>) — the de-facto standard spoken by most unbranded Bluetooth/USB thermal label printers.</td>
+  </tr>
+</table>
+<p>Every driver requires:</p>
+<ul>
+  <li>Chrome or Edge (Web Bluetooth and Web Serial aren't supported in Firefox or Safari)</li>
+  <li>HTTPS, or <code>localhost</code>, to serve NetBox</li>
+  <li>Picking your printer via the browser's native device picker — a real click only you can make, once per browser/origin</li>
+</ul>
+<p>
+  <strong>Why USB-only for Zebra and generic ESC/POS:</strong> those printers almost universally pair
+  over classic Bluetooth (SPP), which the
+  <a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Bluetooth_API" target="_blank" rel="noopener">Web Bluetooth API</a>
+  cannot reach at all from a browser — it only speaks Bluetooth Low Energy (GATT). Niimbot printers
+  use BLE, so Bluetooth works for that driver specifically.
+</p>
+<p>
+  Progress and errors are logged to the browser console, prefixed <code>[NetBoxQR/Niimbot]</code>,
+  <code>[NetBoxQR/ZPL]</code>, or <code>[NetBoxQR/ESC-POS]</code> depending on the driver used.
+</p>
+<p>
+  Printer not listed, or a driver not working for your model? Use the <strong>Report a bug / request
+  device support</strong> link in the same picker.
+</p>
+
+<h2>Security</h2>
+<p>
+  The <strong>HTML</strong>, <strong>CSS</strong>, and <strong>JavaScript</strong> fields are rendered
+  and executed as written — the same trust model NetBox uses for Export Templates and Custom Links.
+  Only users with <code>netbox_qr.add_qrtemplate</code> / <code>change_qrtemplate</code> permission can
+  author or edit templates.
+</p>
+
+</body>
+</html>

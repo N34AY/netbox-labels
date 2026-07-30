@@ -1,0 +1,5 @@
+recursive-include netbox_qr/templates *
+recursive-include netbox_qr/static *
+recursive-include netbox_qr/migrations *.py
+recursive-include netbox_qr/locale *
+include LICENSE README.md

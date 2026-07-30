@@ -1,0 +1,107 @@
+{% load i18n %}
+<button
+  type="button"
+  id="netbox-qr-bulk-print-btn"
+  class="btn btn-sm btn-primary"
+  style="display: none;"
+  data-content-type-id="{{ content_type_id }}"
+  data-bulk-print-url="{{ bulk_print_url }}"
+  data-select-message="{% trans 'Select at least one object first.' %}"
+  onclick="netboxQrBulkPrint(this)"
+  title="{% trans 'Select rows below, then click to print all their QR labels in one batch.' %}"
+>
+  <i class="mdi mdi-printer-pos"></i> {% trans "Bulk print QR" %}
+</button>
+<script>
+  // Translated strings can contain characters (e.g. an apostrophe in "об'єкт")
+  // that break out of an inline JS string literal — passed via data
+  // attributes instead, which Django HTML-escapes safely, rather than
+  // interpolated directly into the script text.
+  function netboxQrBulkPrint(btn) {
+    var checked = document.querySelectorAll('input[name="pk"]:checked');
+    if (checked.length === 0) {
+      alert(btn.dataset.selectMessage);
+      return;
+    }
+    var csrfInput = document.querySelector('input[name="csrfmiddlewaretoken"]');
+
+    var form = document.createElement('form');
+    form.method = 'post';
+    form.action = btn.dataset.bulkPrintUrl;
+    form.target = '_blank';
+    form.style.display = 'none';
+
+    var csrfClone = document.createElement('input');
+    csrfClone.type = 'hidden';
+    csrfClone.name = 'csrfmiddlewaretoken';
+    csrfClone.value = csrfInput ? csrfInput.value : '';
+    form.appendChild(csrfClone);
+
+    var ctInput = document.createElement('input');
+    ctInput.type = 'hidden';
+    ctInput.name = 'content_type_id';
+    ctInput.value = btn.dataset.contentTypeId;
+    form.appendChild(ctInput);
+
+    checked.forEach(function (checkbox) {
+      var idInput = document.createElement('input');
+      idInput.type = 'hidden';
+      idInput.name = 'object_id';
+      idInput.value = checkbox.value;
+      form.appendChild(idInput);
+    });
+
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+  }
+
+  (function () {
+    // There's no plugin hook for the sticky bulk-action row at the bottom
+    // of the table (only for the top control row, where list_buttons()
+    // actually renders this button) — so it's relocated there via JS
+    // instead, and hidden until at least one row is checked. Deferred to
+    // DOMContentLoaded since that row is further down in the page source
+    // and doesn't exist in the DOM yet at the point this inline script runs.
+    document.addEventListener('DOMContentLoaded', function () {
+      var btn = document.getElementById('netbox-qr-bulk-print-btn');
+      if (!btn) return;
+
+      function updateVisibility() {
+        var anyChecked = document.querySelectorAll('input[name="pk"]:checked').length > 0;
+        btn.style.display = anyChecked ? '' : 'none';
+      }
+
+      function ensurePlacement() {
+        // NetBox's list template has two ".bulk-action-buttons" containers:
+        // one inside the "select all N matching query" box (hidden unless
+        // there are multiple pages, and irrelevant here — this plugin's
+        // bulk print only works on explicitly-checked rows), and the one
+        // actually visible in the sticky footer at the bottom of the table.
+        var target = document.querySelector('.sticky-actions .bulk-action-buttons');
+        if (target && !target.contains(btn)) {
+          target.prepend(btn);
+        }
+        updateVisibility();
+      }
+
+      ensurePlacement();
+      // Not filtered to input[name="pk"]: NetBox's "select all" header
+      // checkbox toggles every row checkbox's .checked property directly in
+      // its own click handler, which does not dispatch a 'change' event on
+      // each row checkbox — only the native 'change' event on the header
+      // checkbox itself actually fires. Reacting to any 'change' (cheap —
+      // just a count) catches that case too, not just individual row clicks.
+      document.addEventListener('change', updateVisibility);
+
+      // Sorting, filtering, searching and paginating (including changing
+      // items-per-page) reload the table AND the bulk-action row via htmx,
+      // without a full page navigation — that wholesale-replaces the
+      // ".bulk-action-buttons" markup with a fresh server render that never
+      // includes this button (it only ever gets there via ensurePlacement()
+      // above), silently discarding it. Re-run placement after every htmx
+      // swap, reusing the same button node, so it survives.
+      document.body.addEventListener('htmx:afterSwap', ensurePlacement);
+    });
+  })();
+</script>

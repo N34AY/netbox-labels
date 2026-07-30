@@ -1,0 +1,170 @@
+{% extends 'generic/object.html' %}
+{% load helpers %}
+{% load tabs %}
+{% load i18n %}
+
+{% block tabs %}
+  <ul class="nav nav-tabs" role="presentation">
+    {# Primary tab #}
+    <li class="nav-item">
+      <a class="nav-link{% if not tab %} active{% endif %}" href="{{ object.get_absolute_url }}">{{ object|meta:"verbose_name"|bettertitle }}</a>
+    </li>
+
+    {# Visual designer #}
+    <li class="nav-item">
+      <a class="nav-link" href="{% url 'plugins:netbox_qr:qrtemplate_design' object.pk %}">
+        <i class="mdi mdi-palette"></i> {% trans "Design" %}
+      </a>
+    </li>
+
+    {# Include tabs for registered model views #}
+    {% model_view_tabs object %}
+  </ul>
+{% endblock tabs %}
+
+{% block content %}
+  <div class="row mb-3">
+    <div class="col-md-6">
+      <div class="card">
+        <h5 class="card-header">{% trans "QR Template" %}</h5>
+        <table class="table table-hover attr-table">
+          <tr>
+            <th scope="row">{% trans "Name" %}</th>
+            <td>{{ object.name }}</td>
+          </tr>
+          <tr>
+            <th scope="row">{% trans "Slug" %}</th>
+            <td><code>{{ object.slug }}</code></td>
+          </tr>
+          <tr>
+            <th scope="row">{% trans "Description" %}</th>
+            <td>{{ object.description|placeholder }}</td>
+          </tr>
+          <tr>
+            <th scope="row">{% trans "Active" %}</th>
+            <td>{% checkmark object.is_active %}</td>
+          </tr>
+          <tr>
+            <th scope="row">{% trans "Applies To" %}</th>
+            <td>
+              {% if object.applies_to_all %}
+                <span class="badge text-bg-blue">{% trans "All object types" %}</span>
+              {% else %}
+                {% for ct in object.object_types.all %}
+                  <span class="badge text-bg-grey">{{ ct }}</span>
+                {% empty %}
+                  {{ ''|placeholder }}
+                {% endfor %}
+              {% endif %}
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">{% trans "QR code value" %}</th>
+            <td><code>{{ object.qr_value }}</code></td>
+          </tr>
+          <tr>
+            <th scope="row">{% trans "Size" %}</th>
+            <td>{{ object.width_mm }} × {{ object.height_mm }} mm</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card">
+        <h5 class="card-header">{% trans "Generated Code" %}</h5>
+        <div class="card-body">
+          <ul class="nav nav-tabs" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#qr-code-html" type="button" role="tab">HTML</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" data-bs-toggle="tab" data-bs-target="#qr-code-css" type="button" role="tab">CSS</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" data-bs-toggle="tab" data-bs-target="#qr-code-js" type="button" role="tab">JavaScript</button>
+            </li>
+          </ul>
+          <div class="tab-content pt-3">
+            <div class="tab-pane fade show active" id="qr-code-html" role="tabpanel">
+              {% if object.html_code %}
+                <div class="netbox-qr-code-wrap">
+                  <button type="button" class="btn btn-sm btn-ghost-secondary netbox-qr-copy-btn" data-copy-target="qr-code-html-content" title="{% trans 'Copy to clipboard' %}">
+                    <i class="mdi mdi-content-copy"></i>
+                  </button>
+                  <pre class="netbox-qr-code-block" id="qr-code-html-content"><code>{{ object.html_code }}</code></pre>
+                </div>
+              {% else %}
+                <p class="text-muted mb-0">{% trans "No HTML code." %}</p>
+              {% endif %}
+            </div>
+            <div class="tab-pane fade" id="qr-code-css" role="tabpanel">
+              {% if object.css_code %}
+                <div class="netbox-qr-code-wrap">
+                  <button type="button" class="btn btn-sm btn-ghost-secondary netbox-qr-copy-btn" data-copy-target="qr-code-css-content" title="{% trans 'Copy to clipboard' %}">
+                    <i class="mdi mdi-content-copy"></i>
+                  </button>
+                  <pre class="netbox-qr-code-block" id="qr-code-css-content"><code>{{ object.css_code }}</code></pre>
+                </div>
+              {% else %}
+                <p class="text-muted mb-0">{% trans "No CSS code." %}</p>
+              {% endif %}
+            </div>
+            <div class="tab-pane fade" id="qr-code-js" role="tabpanel">
+              {% if object.js_code %}
+                <div class="netbox-qr-code-wrap">
+                  <button type="button" class="btn btn-sm btn-ghost-secondary netbox-qr-copy-btn" data-copy-target="qr-code-js-content" title="{% trans 'Copy to clipboard' %}">
+                    <i class="mdi mdi-content-copy"></i>
+                  </button>
+                  <pre class="netbox-qr-code-block" id="qr-code-js-content"><code>{{ object.js_code }}</code></pre>
+                </div>
+              {% else %}
+                <p class="text-muted mb-0">{% trans "No JavaScript code." %}</p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <style>
+    /* Generated code is written by the visual designer as a single long
+       line, not hand-formatted — wrap it instead of letting it overflow
+       the card unreadably, and cap the height for very large templates. */
+    .netbox-qr-code-block {
+      white-space: pre-wrap;
+      word-break: break-all;
+      max-height: 22rem;
+      overflow-y: auto;
+      font-size: 0.8125rem;
+      margin-bottom: 0;
+    }
+    .netbox-qr-code-wrap {
+      position: relative;
+    }
+    .netbox-qr-copy-btn {
+      position: absolute;
+      top: 0.25rem;
+      right: 0.25rem;
+      z-index: 1;
+    }
+  </style>
+  <script>
+    document.querySelectorAll('.netbox-qr-copy-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var target = document.getElementById(btn.dataset.copyTarget);
+        if (!target) {
+          return;
+        }
+        navigator.clipboard.writeText(target.textContent).then(function () {
+          var icon = btn.querySelector('i');
+          icon.classList.remove('mdi-content-copy');
+          icon.classList.add('mdi-check');
+          setTimeout(function () {
+            icon.classList.remove('mdi-check');
+            icon.classList.add('mdi-content-copy');
+          }, 1500);
+        });
+      });
+    });
+  </script>
+{% endblock %}
