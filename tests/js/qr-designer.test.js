@@ -1,0 +1,328 @@
+'use strict';
+
+const path = require('path');
+const { designerFixtureHtml } = require('./helpers/designer-fixture');
+
+const SCRIPT_PATH = path.join(__dirname, '../../netbox_labels/static/netbox_labels/qr-designer.js');
+const BASE_PX_PER_MM = 8;
+
+function loadDesigner(fixtureOptions) {
+  document.body.innerHTML = designerFixtureHtml(fixtureOptions);
+  jest.resetModules();
+  jest.isolateModules(() => {
+    require(SCRIPT_PATH);
+  });
+}
+
+function els() {
+  return {
+    canvas: document.getElementById('qr-canvas'),
+    undo: document.getElementById('qr-undo'),
+    redo: document.getElementById('qr-redo'),
+    zoomIn: document.getElementById('qr-zoom-in'),
+    zoomOut: document.getElementById('qr-zoom-out'),
+    zoomReset: document.getElementById('qr-zoom-reset'),
+    zoomLabel: document.getElementById('qr-zoom-label'),
+    addText: document.getElementById('qr-add-text'),
+    addQr: document.getElementById('qr-add-qr'),
+    properties: document.getElementById('qr-properties-body'),
+    widthInput: document.getElementById('qr-canvas-width'),
+    heightInput: document.getElementById('qr-canvas-height'),
+    dimsLabel: document.getElementById('qr-dims-label'),
+    saveForm: document.getElementById('qr-save-form'),
+    layoutJsonInput: document.getElementById('qr-layout-json'),
+    widthMmInput: document.getElementById('qr-width-mm-input'),
+    heightMmInput: document.getElementById('qr-height-mm-input'),
+    previewIframe: document.getElementById('qr-preview-iframe'),
+    previewBtn: document.getElementById('qr-preview-btn'),
+    previewModeObjectBtn: document.getElementById('qr-preview-mode-object'),
+    previewContentType: document.getElementById('qr-preview-content-type'),
+    previewSearch: document.getElementById('qr-preview-search'),
+    previewResults: document.getElementById('qr-preview-results'),
+  };
+}
+
+function qrEls() {
+  return Array.from(document.querySelectorAll('.qr-el'));
+}
+
+function mousedown(el, x, y) {
+  el.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, clientX: x, clientY: y }));
+}
+function mousemove(x, y) {
+  document.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, clientX: x, clientY: y }));
+}
+function mouseup() {
+  document.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+}
+
+const TEXT_EL = { id: 'text-1', type: 'text', x_mm: 2, y_mm: 2, width_mm: 20, height_mm: 5, binding: 'static', text: 'Hello' };
+const QR_EL = { id: 'qr-1', type: 'qr', x_mm: 5, y_mm: 5, width_mm: 10, height_mm: 10, correct_level: 'H' };
+
+afterEach(() => {
+  delete global.fetch;
+});
+
+describe('initial render', () => {
+  test('draws one .qr-el per layout element, positioned/sized in px at zoom=1', () => {
+    loadDesigner({ elements: [TEXT_EL] });
+    const [div] = qrEls();
+    expect(qrEls()).toHaveLength(1);
+    expect(div.style.left).toBe(2 * BASE_PX_PER_MM + 'px');
+    expect(div.style.top).toBe(2 * BASE_PX_PER_MM + 'px');
+    expect(div.style.width).toBe(20 * BASE_PX_PER_MM + 'px');
+    expect(div.style.height).toBe(5 * BASE_PX_PER_MM + 'px');
+  });
+
+  test('shows a static text element\'s own text as its preview content', () => {
+    loadDesigner({ elements: [TEXT_EL] });
+    expect(qrEls()[0].textContent).toBe('Hello');
+  });
+
+  test('shows Jinja2-ish placeholders for non-static bindings', () => {
+    loadDesigner({
+      elements: [
+        { id: 't1', type: 'text', x_mm: 0, y_mm: 0, width_mm: 10, height_mm: 5, binding: 'object' },
+        { id: 't2', type: 'text', x_mm: 0, y_mm: 6, width_mm: 10, height_mm: 5, binding: 'object_type' },
+        { id: 't3', type: 'text', x_mm: 0, y_mm: 12, width_mm: 10, height_mm: 5, binding: 'custom', expr: 'object.status' },
+      ],
+    });
+    const [a, b, c] = qrEls();
+    expect(a.textContent).toBe('{{ object }}');
+    expect(b.textContent).toBe('{{ object_type.model }}');
+    expect(c.textContent).toBe('{{ object.status }}');
+  });
+});
+
+describe('selection and properties panel', () => {
+  test('selecting an element shows its x/y/width/height fields and a delete button', () => {
+    loadDesigner({ elements: [TEXT_EL] });
+    mousedown(qrEls()[0], 0, 0);
+    mouseup();
+
+    const { properties } = els();
+    expect(properties.querySelector('[data-prop="x_mm"]').value).toBe('2');
+    expect(properties.querySelector('[data-prop="width_mm"]').value).toBe('20');
+    expect(document.getElementById('qr-delete-element')).not.toBeNull();
+  });
+
+  test('nothing selected shows the placeholder hint instead', () => {
+    loadDesigner({ elements: [TEXT_EL] });
+    expect(els().properties.textContent).toMatch(/Select an element/);
+  });
+});
+
+describe('add / delete elements', () => {
+  test('adding a text element appends it, selects it, and enables undo', () => {
+    loadDesigner({ elements: [] });
+    els().addText.click();
+
+    expect(qrEls()).toHaveLength(1);
+    expect(els().undo.disabled).toBe(false);
+    expect(document.getElementById('qr-delete-element')).not.toBeNull();
+  });
+
+  test('deleting via the delete icon removes the element', () => {
+    loadDesigner({ elements: [TEXT_EL] });
+    mousedown(qrEls()[0], 0, 0);
+    mouseup();
+    document.querySelector('.qr-delete-icon').dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+    expect(qrEls()).toHaveLength(0);
+  });
+
+  test('deleting via the Delete key only fires when an element is selected and focus is not in a form field', () => {
+    loadDesigner({ elements: [TEXT_EL] });
+
+    // Not selected: no-op.
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Delete', bubbles: true }));
+    expect(qrEls()).toHaveLength(1);
+
+    mousedown(qrEls()[0], 0, 0);
+    mouseup();
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Delete', bubbles: true }));
+    expect(qrEls()).toHaveLength(0);
+  });
+});
+
+describe('undo / redo', () => {
+  test('Ctrl+Z undoes the last change, Ctrl+Shift+Z redoes it', () => {
+    loadDesigner({ elements: [] });
+    els().addText.click();
+    expect(qrEls()).toHaveLength(1);
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, bubbles: true }));
+    expect(qrEls()).toHaveLength(0);
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, shiftKey: true, bubbles: true }));
+    expect(qrEls()).toHaveLength(1);
+  });
+
+  test('undo is disabled at the start of history and redo disabled at the end', () => {
+    loadDesigner({ elements: [] });
+    const { undo, redo } = els();
+    expect(undo.disabled).toBe(true);
+    expect(redo.disabled).toBe(true);
+
+    els().addText.click();
+    expect(undo.disabled).toBe(false);
+    expect(redo.disabled).toBe(true);
+  });
+});
+
+describe('zoom', () => {
+  test('zooming in scales element geometry and updates the label', () => {
+    loadDesigner({ elements: [TEXT_EL] });
+    els().zoomIn.click();
+    expect(els().zoomLabel.textContent).toBe('125%');
+    expect(qrEls()[0].style.left).toBe(2 * BASE_PX_PER_MM * 1.25 + 'px');
+  });
+
+  test('zoom is clamped between 25% and 400%', () => {
+    loadDesigner({ elements: [] });
+    for (let i = 0; i < 30; i++) {
+      els().zoomIn.click();
+    }
+    expect(els().zoomLabel.textContent).toBe('400%');
+
+    for (let i = 0; i < 60; i++) {
+      els().zoomOut.click();
+    }
+    expect(els().zoomLabel.textContent).toBe('25%');
+  });
+
+  test('reset returns to 100%', () => {
+    loadDesigner({ elements: [] });
+    els().zoomIn.click();
+    els().zoomReset.click();
+    expect(els().zoomLabel.textContent).toBe('100%');
+  });
+});
+
+describe('drag and resize', () => {
+  test('dragging an element moves it by the mouse delta, in whole-mm-tenths, clamped at 0', () => {
+    loadDesigner({ elements: [TEXT_EL] });
+    mousedown(qrEls()[0], 100, 100);
+    mousemove(100 + 8 * BASE_PX_PER_MM, 100 + 4 * BASE_PX_PER_MM); // +8mm x, +4mm y
+    mouseup();
+
+    const div = qrEls()[0];
+    expect(div.style.left).toBe((2 + 8) * BASE_PX_PER_MM + 'px');
+    expect(div.style.top).toBe((2 + 4) * BASE_PX_PER_MM + 'px');
+  });
+
+  test('dragging past the top-left edge clamps position at 0', () => {
+    loadDesigner({ elements: [TEXT_EL] });
+    mousedown(qrEls()[0], 100, 100);
+    mousemove(100 - 999, 100 - 999);
+    mouseup();
+
+    const div = qrEls()[0];
+    expect(div.style.left).toBe('0px');
+    expect(div.style.top).toBe('0px');
+  });
+
+  test('a drag is undoable as a single step', () => {
+    loadDesigner({ elements: [TEXT_EL] });
+    mousedown(qrEls()[0], 100, 100);
+    mousemove(100 + 8 * BASE_PX_PER_MM, 100);
+    mouseup();
+    expect(qrEls()[0].style.left).toBe((2 + 8) * BASE_PX_PER_MM + 'px');
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, bubbles: true }));
+    expect(qrEls()[0].style.left).toBe(2 * BASE_PX_PER_MM + 'px');
+  });
+
+  test('dragging the SE handle resizes width and height without moving the element', () => {
+    loadDesigner({ elements: [TEXT_EL] });
+    mousedown(qrEls()[0], 0, 0); // select, to render resize handles
+    mouseup();
+
+    const seHandle = document.querySelectorAll('.qr-handle')[3];
+    mousedown(seHandle, 200, 200);
+    mousemove(200 + 4 * BASE_PX_PER_MM, 200 + 3 * BASE_PX_PER_MM);
+    mouseup();
+
+    const div = qrEls()[0];
+    expect(div.style.width).toBe((20 + 4) * BASE_PX_PER_MM + 'px');
+    expect(div.style.height).toBe((5 + 3) * BASE_PX_PER_MM + 'px');
+    expect(div.style.left).toBe(2 * BASE_PX_PER_MM + 'px');
+  });
+});
+
+describe('canvas size', () => {
+  test('changing width/height updates the dimensions label and canvas geometry', () => {
+    loadDesigner({ elements: [], widthMm: 40, heightMm: 12 });
+    const { widthInput, heightInput, dimsLabel } = els();
+
+    widthInput.value = '50';
+    widthInput.dispatchEvent(new Event('input', { bubbles: true }));
+    heightInput.value = '20';
+    heightInput.dispatchEvent(new Event('input', { bubbles: true }));
+
+    expect(dimsLabel.textContent).toBe('50 × 20 mm');
+    expect(document.getElementById('qr-canvas').style.width).toBe(50 * BASE_PX_PER_MM + 'px');
+  });
+});
+
+describe('save', () => {
+  test('submitting serializes the current elements and canvas size into the hidden fields', () => {
+    loadDesigner({ elements: [TEXT_EL, QR_EL], widthMm: 40, heightMm: 12 });
+    const { saveForm, layoutJsonInput, widthMmInput, heightMmInput } = els();
+
+    saveForm.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+
+    expect(JSON.parse(layoutJsonInput.value)).toEqual({ elements: [TEXT_EL, QR_EL] });
+    expect(widthMmInput.value).toBe('40');
+    expect(heightMmInput.value).toBe('12');
+  });
+});
+
+describe('preview: out-of-order response guard (regression)', () => {
+  test('renderPreview only applies the most recently issued request\'s response', async () => {
+    loadDesigner({ elements: [] });
+
+    let resolveFirst, resolveSecond;
+    const first = new Promise((resolve) => { resolveFirst = resolve; });
+    const second = new Promise((resolve) => { resolveSecond = resolve; });
+    global.fetch = jest.fn()
+      .mockReturnValueOnce(first)
+      .mockReturnValueOnce(second);
+
+    els().previewBtn.click(); // fires request #1
+    els().previewBtn.click(); // fires request #2, supersedes #1
+
+    // Resolve out of order: the stale first request finishes last.
+    resolveSecond({ text: () => Promise.resolve('HTML-2') });
+    await Promise.resolve().then(() => {}).then(() => {}).then(() => {});
+    resolveFirst({ text: () => Promise.resolve('HTML-1') });
+    await Promise.resolve().then(() => {}).then(() => {}).then(() => {});
+
+    expect(els().previewIframe.srcdoc).toBe('HTML-2');
+  });
+
+  test('runObjectSearch only renders the most recently issued query\'s results', async () => {
+    loadDesigner({ elements: [] });
+
+    let resolveFirst, resolveSecond;
+    const first = new Promise((resolve) => { resolveFirst = resolve; });
+    const second = new Promise((resolve) => { resolveSecond = resolve; });
+    global.fetch = jest.fn()
+      .mockReturnValueOnce(first)
+      .mockReturnValueOnce(second);
+
+    const { previewModeObjectBtn, previewSearch } = els();
+    previewModeObjectBtn.click(); // switches to object mode, fires search #1 (empty query)
+    previewSearch.value = 'site';
+    // Changing content type fires search #2 synchronously (no debounce),
+    // exercising the same requestId guard as the debounced keystroke path.
+    document.getElementById('qr-preview-content-type').dispatchEvent(new Event('change', { bubbles: true }));
+
+    resolveSecond({ json: () => Promise.resolve({ results: [{ id: 2, display: 'Second' }] }) });
+    await Promise.resolve().then(() => {}).then(() => {}).then(() => {});
+    resolveFirst({ json: () => Promise.resolve({ results: [{ id: 1, display: 'First' }] }) });
+    await Promise.resolve().then(() => {}).then(() => {}).then(() => {});
+
+    expect(els().previewResults.textContent).toBe('Second');
+  });
+});

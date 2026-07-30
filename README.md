@@ -136,6 +136,14 @@ From inside the netbox-docker `netbox` container, that's:
 docker compose exec netbox python /opt/netbox/netbox/manage.py test netbox_labels
 ```
 
+The static JS assets (the visual designer, bulk printing, printer drivers) have their own suite,
+run with [Jest](https://jestjs.io/):
+
+```bash
+npm install
+npm test
+```
+
 ## Contributing
 
 Issues and pull requests are welcome at

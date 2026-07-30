@@ -1,0 +1,12 @@
+{
+  "name": "netbox-labels",
+  "private": true,
+  "description": "JS test suite for the netbox_labels plugin's static assets",
+  "scripts": {
+    "test": "jest"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0"
+  }
+}
