@@ -148,7 +148,10 @@ npm test
 
 Issues and pull requests are welcome at
 [github.com/N34AY/netbox-labels](https://github.com/N34AY/netbox-labels). Please include your
-NetBox and plugin version when reporting a bug.
+NetBox and plugin version when reporting a bug. See [CONTRIBUTING.md](CONTRIBUTING.md) for dev
+setup and how to run the test suites.
+
+Found a security issue? Please see [SECURITY.md](SECURITY.md) instead of opening a public issue.
 
 ## License
 
