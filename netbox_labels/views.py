@@ -246,6 +246,7 @@ class QRTemplatePreviewView(LoginRequiredMixin, PermissionRequiredMixin, View):
         object_id = request.POST.get('object_id')
 
         preview_template = QRTemplate(html_code=html_code, css_code=css_code, qr_value=qr_value)
+        is_real_object = bool(content_type_id and object_id)
 
         # A broken binding (bad Jinja2 syntax, a typo'd attribute chain that
         # raises instead of resolving to Undefined, etc.) would otherwise
@@ -253,10 +254,18 @@ class QRTemplatePreviewView(LoginRequiredMixin, PermissionRequiredMixin, View):
         # label and no indication of what's wrong. Since this view only ever
         # backs the designer's own live preview (never an actual printed
         # label), it's caught and surfaced in the response instead, so the
-        # preview can show the user exactly what broke.
+        # preview can show the user exactly what broke. Only surfaced for a
+        # real-object preview though: against placeholder data, an
+        # expression that's actually fine for a real object (e.g. one
+        # involving an attribute the placeholder object doesn't have) can
+        # easily raise in ways that don't mean anything is really wrong —
+        # already-Undefined attribute access is handled gracefully (see
+        # layout.py's default() fallback), but not every possible failure
+        # mode is, so a genuinely broken expression is confirmed against
+        # real data rather than flagged as an error against fake data.
         render_error = None
         try:
-            if content_type_id and object_id:
+            if is_real_object:
                 content_type = get_object_or_404(ContentType, pk=content_type_id)
                 model = content_type.model_class()
                 if model is None:
@@ -268,7 +277,12 @@ class QRTemplatePreviewView(LoginRequiredMixin, PermissionRequiredMixin, View):
         except Http404:
             raise
         except Exception as e:
-            render_error = f'{e.__class__.__name__}: {e}'
+            # Still caught (never a 500) either way — only surfaced as a
+            # visible error for a real-object preview; for placeholder data
+            # it just falls back to a blank label, same as before this
+            # error-reporting existed.
+            if is_real_object:
+                render_error = f'{e.__class__.__name__}: {e}'
             context = {'qr_value': '', 'body_html': '', 'css_code': css_code, 'js_code': '', 'object_data': {}}
 
         context['qr_template'] = qr_template
