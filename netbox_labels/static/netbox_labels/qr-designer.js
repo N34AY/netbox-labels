@@ -52,6 +52,8 @@
 	var previewResults = document.getElementById('qr-preview-results');
 	var previewIframe = document.getElementById('qr-preview-iframe');
 	var previewDataWrapper = document.getElementById('qr-preview-data-wrapper');
+	var previewDataToggle = document.getElementById('qr-preview-data-toggle');
+	var previewDataCollapseEl = document.getElementById('qr-preview-data-collapse');
 	var previewDataJson = document.getElementById('qr-preview-data-json');
 	var previewErrorEl = document.getElementById('qr-preview-error');
 
@@ -664,39 +666,47 @@
 	}
 
 	// The rendered HTML (netbox_labels/render.html) already embeds the
-	// object's serialized data (and, if rendering failed, the error) via
+	// object's serialized data (and, if a binding failed, the error) via
 	// json_script — parsed straight out of the already-fetched HTML string
 	// (not read back out of the iframe after the fact: srcdoc's 'load' event
-	// timing turned out not reliable enough to depend on here).
+	// timing turned out not reliable enough to depend on here). Both live in
+	// the same collapsible "Object data (debug)" panel — the error on top,
+	// object data below — rather than a separate always-visible box, since
+	// they're the same "why is my binding doing that" debugging need.
 	function showPreviewResult(isRealObject, html) {
-		var doc = new DOMParser().parseFromString(html, 'text/html');
-
-		// A broken binding (bad Jinja2 syntax, an expression that raises
-		// instead of resolving) leaves no label to show at all — surface
-		// exactly what went wrong instead of a blank preview, same as the
-		// object-data debug panel does for looking up field names, except
-		// shown immediately (not collapsed) since it needs the user's
-		// attention. Applies in both placeholder and real-object mode.
-		var errorEl = doc.getElementById('netbox-qr-render-error');
-		if (errorEl) {
-			previewErrorEl.textContent = JSON.parse(errorEl.textContent);
-			previewErrorEl.classList.remove('d-none');
-			previewDataWrapper.classList.add('d-none');
-			return;
-		}
-		previewErrorEl.classList.add('d-none');
-
 		if (!isRealObject) {
 			previewDataWrapper.classList.add('d-none');
 			return;
 		}
+		var doc = new DOMParser().parseFromString(html, 'text/html');
+
+		var errorEl = doc.getElementById('netbox-qr-render-error');
+		var hasError = !!errorEl;
+		previewErrorEl.classList.toggle('d-none', !hasError);
+		previewDataToggle.classList.toggle('text-danger', hasError);
+		if (hasError) {
+			previewErrorEl.textContent = JSON.parse(errorEl.textContent);
+		}
+
 		try {
-			var el = doc.getElementById('netbox-qr-object-data');
-			var data = el ? JSON.parse(el.textContent) : {};
+			var dataEl = doc.getElementById('netbox-qr-object-data');
+			var data = dataEl ? JSON.parse(dataEl.textContent) : {};
 			previewDataJson.textContent = JSON.stringify(data, null, 2);
-			previewDataWrapper.classList.remove('d-none');
 		} catch (e) {
-			previewDataWrapper.classList.add('d-none');
+			previewDataJson.textContent = '';
+		}
+
+		previewDataWrapper.classList.remove('d-none');
+
+		// An error needs the user's attention immediately rather than
+		// staying hidden behind a click — expand the collapse directly via
+		// its classes (matching what Bootstrap's own JS would leave it in)
+		// rather than going through bootstrap.Collapse, which isn't exposed
+		// as a global in this NetBox build.
+		if (hasError) {
+			previewDataCollapseEl.classList.add('show');
+			previewDataToggle.setAttribute('aria-expanded', 'true');
+			previewDataToggle.classList.remove('collapsed');
 		}
 	}
 

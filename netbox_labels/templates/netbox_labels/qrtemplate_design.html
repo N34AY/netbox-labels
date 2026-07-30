@@ -163,7 +163,6 @@
             </div>
           </div>
           <div class="col-lg-8">
-            <div class="alert alert-danger d-none netbox-qr-preview-error" id="qr-preview-error"></div>
             <iframe id="qr-preview-iframe" style="width: 100%; height: 60vh; border: 1px solid var(--tblr-border-color, #ccc); background: #fff;"></iframe>
             <div class="mt-2 d-none" id="qr-preview-data-wrapper">
               <button
@@ -171,10 +170,12 @@
                 class="btn btn-sm btn-outline-secondary"
                 data-bs-toggle="collapse"
                 data-bs-target="#qr-preview-data-collapse"
+                id="qr-preview-data-toggle"
               >
                 <i class="mdi mdi-code-json"></i> {% trans "Object data (debug)" %}
               </button>
               <div class="collapse mt-2" id="qr-preview-data-collapse">
+                <div class="alert alert-danger d-none netbox-qr-preview-error mb-2" id="qr-preview-error"></div>
                 <pre class="netbox-qr-preview-data" id="qr-preview-data-json"></pre>
               </div>
             </div>

@@ -286,9 +286,15 @@ class QRTemplatePreviewView(LoginRequiredMixin, PermissionRequiredMixin, View):
             # A safety net for whatever sanitize_layout_for_context() doesn't
             # cover (e.g. something outside a text element's own binding) —
             # still never a 500 either way, only surfaced for a real object.
+            # object_data still comes from render_context (built before this
+            # attempt) rather than an empty dict, so the debug panel keeps
+            # working even when the render itself failed outright.
             if is_real_object:
                 render_error = f'{e.__class__.__name__}: {e}'
-            context = {'qr_value': '', 'body_html': '', 'css_code': css_code, 'js_code': '', 'object_data': {}}
+            context = {
+                'qr_value': '', 'body_html': '', 'css_code': css_code, 'js_code': '',
+                'object_data': render_context.get('object_data', {}),
+            }
 
         if is_real_object and element_errors:
             detail = '\n'.join(f'{element_id}: {message}' for element_id, message in element_errors)
