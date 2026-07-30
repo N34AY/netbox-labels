@@ -117,6 +117,22 @@ NetBox itself uses for Export Templates and Custom Links. Only users with
 that permission should be granted only to trusted staff, the same as NetBox's own scripting
 and export-template features.
 
+## Running tests
+
+Like any NetBox plugin, the test suite needs a full NetBox environment (it exercises real
+`dcim` models and the plugin's own migrations), so it's run through NetBox's own management
+command rather than directly with `pytest`:
+
+```bash
+python manage.py test netbox_labels
+```
+
+From inside the netbox-docker `netbox` container, that's:
+
+```bash
+docker compose exec netbox python /opt/netbox/netbox/manage.py test netbox_labels
+```
+
 ## Contributing
 
 Issues and pull requests are welcome at
