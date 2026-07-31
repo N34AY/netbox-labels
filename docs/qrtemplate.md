@@ -135,8 +135,9 @@ whose value it can actually check up front:
 
 ## Printing to a label printer
 
-The **Print via…** button (hidden if disabled in [QR Settings](../../../../../plugins/labels/settings/))
-opens a small picker offering direct printing to a label printer, bypassing the OS print dialog
+The **Print via…** button (hidden if disabled under **QR Codes → Settings** in your NetBox
+instance's sidebar) opens a small picker offering direct printing to a label printer, bypassing
+the OS print dialog
 entirely. Four drivers are supported:
 
 | Driver | Transport | Notes |
