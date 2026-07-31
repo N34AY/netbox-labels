@@ -11,14 +11,15 @@ Layout shape:
 {
     "elements": [
         {
-            "id": str, "type": "text" | "qr" | "image",
+            "id": str, "type": "text" | "qr" | "image" | "barcode",
             "x_mm": float, "y_mm": float, "width_mm": float, "height_mm": float,
-            # text only:
+            # text and barcode:
             "binding": "static" | "object" | "object_type" | "custom" | "format",
             "text": str,   # used when binding == "static"
             "expr": str,   # used when binding == "custom" (a Jinja2 expression, no {{ }})
             "format": str, # used when binding == "format" (literal text with ${expr}
                             # placeholders, e.g. "Ip - ${object.primary_ip}")
+            # text only:
             "font_size_mm": float, "font_weight": "normal" | "bold",
             "color": str, "text_align": "left" | "center" | "right",
             "text_transform": "none" | "uppercase" | "lowercase" | "capitalize",
@@ -27,6 +28,10 @@ Layout shape:
             "correct_level": "L" | "M" | "Q" | "H",
             # image only:
             "src": str,  # a data: URI (uploaded file, embedded inline)
+            # barcode only:
+            "barcode_format": "CODE128" | "EAN13" | "EAN8" | "UPC" | "CODE39" | "ITF14" |
+                               "MSI" | "pharmacode" | "codabar",
+            # barcode also uses "color" (line/text color), like text elements do.
         },
         ...
     ],
@@ -143,6 +148,29 @@ def _render_image_element(element):
     return f'<img src="{src}" style="{style}">'
 
 
+_BARCODE_FORMATS = ('CODE128', 'EAN13', 'EAN8', 'UPC', 'CODE39', 'ITF14', 'MSI', 'pharmacode', 'codabar')
+
+
+def _render_barcode_element(element):
+    barcode_format = element.get('barcode_format') or 'CODE128'
+    if barcode_format not in _BARCODE_FORMATS:
+        barcode_format = 'CODE128'
+    style = _element_style(element) + 'background:#fff;'
+    color = escape(element.get('color') or '#000000')
+    # The encoded value is the canvas's own inner text (read via .textContent
+    # by barcode-render.js), not a data-*="..." attribute — text_content()'s
+    # output is only safe to splice in raw where it's HTML *content*, like
+    # _render_text_element's <div> below: for "custom"/"format" bindings it
+    # contains admin-authored Jinja2 source that isn't attribute-escaped, so
+    # embedding it inside a quoted attribute could let a literal `"` in an
+    # expression break out of the attribute.
+    return (
+        f'<canvas class="netbox-labels-barcode" '
+        f'data-barcode-format="{escape(barcode_format)}" data-barcode-color="{color}" '
+        f'width="600" height="200" style="{style}">{text_content(element)}</canvas>'
+    )
+
+
 def _render_text_element(element):
     style = _element_style(element)
     style += f"font-size:{_num(element.get('font_size_mm'), 3)}mm;"
@@ -163,6 +191,7 @@ _RENDERERS = {
     'qr': _render_qr_element,
     'image': _render_image_element,
     'text': _render_text_element,
+    'barcode': _render_barcode_element,
 }
 
 

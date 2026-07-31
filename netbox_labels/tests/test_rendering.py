@@ -118,6 +118,27 @@ class SanitizeLayoutForContextTests(TestCase):
         self.assertEqual(errors, [])
         self.assertEqual(safe_layout['elements'][0], layout['elements'][0])
 
+    def test_barcode_failing_custom_binding_is_blanked_and_reported_like_text(self):
+        layout = {'elements': [{'id': 'bad', 'type': 'barcode', 'binding': 'custom', 'expr': '1/0'}]}
+        safe_layout, errors = rendering.sanitize_layout_for_context(layout, self._context())
+        self.assertEqual(len(errors), 1)
+        self.assertEqual(errors[0][0], 'bad')
+        self.assertIn('ZeroDivisionError', errors[0][1])
+        blanked = safe_layout['elements'][0]
+        self.assertEqual(blanked['binding'], 'static')
+        self.assertEqual(blanked['text'], '')
+
+    def test_barcode_working_custom_binding_is_untouched(self):
+        layout = {'elements': [{'id': 'ok', 'type': 'barcode', 'binding': 'custom', 'expr': "'12345'"}]}
+        safe_layout, errors = rendering.sanitize_layout_for_context(layout, self._context())
+        self.assertEqual(errors, [])
+        self.assertEqual(safe_layout['elements'][0], layout['elements'][0])
+
+    def test_barcode_object_binding_is_never_test_rendered(self):
+        layout = {'elements': [{'id': 'b1', 'type': 'barcode', 'binding': 'object'}]}
+        safe_layout, errors = rendering.sanitize_layout_for_context(layout, self._context())
+        self.assertEqual(errors, [])
+
     def test_object_and_static_bindings_are_never_test_rendered(self):
         # Only "custom"/"format" bindings carry an admin-authored expression
         # that could raise — object/object_type/static are fixed, safe

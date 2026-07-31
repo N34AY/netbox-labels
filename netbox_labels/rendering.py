@@ -107,7 +107,7 @@ def sanitize_layout_for_context(layout, context):
     sanitized = copy.deepcopy(layout)
     errors = []
     for element in sanitized.get('elements', []):
-        if element.get('type') != 'text' or element.get('binding') not in ('custom', 'format'):
+        if element.get('type') not in ('text', 'barcode') or element.get('binding') not in ('custom', 'format'):
             continue
         fragment = text_content(element)
         if not fragment:

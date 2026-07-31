@@ -41,6 +41,7 @@
 	var addTextLink = document.getElementById('qr-add-text');
 	var addImageLink = document.getElementById('qr-add-image');
 	var addQrLink = document.getElementById('qr-add-qr');
+	var addBarcodeLink = document.getElementById('qr-add-barcode');
 	var imageFileInput = document.getElementById('qr-image-file-input');
 	var iconSearchInput = document.getElementById('qr-icon-search');
 	var iconResults = document.getElementById('qr-icon-results');
@@ -297,11 +298,13 @@
 			content.style.cssText = [
 				'width:100%', 'height:100%', 'overflow:hidden',
 				'display:flex', 'align-items:center', 'font-size:11px',
-				'background:' + (el.type === 'qr' ? 'repeating-linear-gradient(45deg,#eee,#eee 4px,#fff 4px,#fff 8px)' : el.type === 'image' && !el.src ? '#eee' : 'transparent'),
+				'background:' + ((el.type === 'qr' || el.type === 'barcode') ? 'repeating-linear-gradient(45deg,#eee,#eee 4px,#fff 4px,#fff 8px)' : el.type === 'image' && !el.src ? '#eee' : 'transparent'),
 			].join(';');
 
 			if (el.type === 'qr') {
 				content.textContent = 'QR';
+			} else if (el.type === 'barcode') {
+				content.textContent = '▮▮▮ ' + (el.barcode_format || 'CODE128');
 			} else if (el.type === 'image') {
 				if (el.src) {
 					var img = document.createElement('img');
@@ -438,7 +441,11 @@
 			if (el._icon_name) {
 				rows.push(field(_('Recolor icon'), colorInput('_icon_color', el._icon_color || '#000000')));
 			}
-		} else {
+		} else if (el.type === 'text' || el.type === 'barcode') {
+			// Text and barcode elements share the same "what data to encode"
+			// binding UI — text renders it as a styled string, barcode as
+			// scanlines — see text_content() in layout.py, which both
+			// renderers call identically.
 			rows.push(field(_('Content'), selectInput('binding', el.binding || 'object', [
 				['object', _('Object (works for every type)')],
 				['object_type', _('Object type')],
@@ -458,14 +465,23 @@
 			if (el.binding === 'custom') {
 				rows.push(field(_('Expression'), textInput('expr', el.expr || ''), 'e.g. object.status, object.rack.name'));
 			}
-			rows.push(field(_('Font size (mm)'), numberInput('font_size_mm', el.font_size_mm || 3)));
-			rows.push(field(_('Weight'), selectInput('font_weight', el.font_weight || 'normal', [['normal', _('Normal')], ['bold', _('Bold')]])));
-			rows.push(field(_('Color'), colorInput('color', el.color || '#000000')));
-			rows.push(field(_('Align'), selectInput('text_align', el.text_align || 'left', [['left', _('Left')], ['center', _('Center')], ['right', _('Right')]])));
-			rows.push(field(_('Transform'), selectInput('text_transform', el.text_transform || 'none', [
-				['none', _('None')], ['uppercase', _('UPPERCASE')], ['lowercase', _('lowercase')], ['capitalize', _('Capitalize')],
-			])));
-			rows.push(field(_('Letter spacing (mm)'), numberInput('letter_spacing_mm', el.letter_spacing_mm || 0)));
+			if (el.type === 'barcode') {
+				rows.push(field(_('Barcode format'), selectInput('barcode_format', el.barcode_format || 'CODE128', [
+					['CODE128', 'CODE128'], ['EAN13', 'EAN13'], ['EAN8', 'EAN8'], ['UPC', 'UPC'],
+					['CODE39', 'CODE39'], ['ITF14', 'ITF14'], ['MSI', 'MSI'],
+					['pharmacode', 'pharmacode'], ['codabar', 'codabar'],
+				])));
+				rows.push(field(_('Color'), colorInput('color', el.color || '#000000')));
+			} else {
+				rows.push(field(_('Font size (mm)'), numberInput('font_size_mm', el.font_size_mm || 3)));
+				rows.push(field(_('Weight'), selectInput('font_weight', el.font_weight || 'normal', [['normal', _('Normal')], ['bold', _('Bold')]])));
+				rows.push(field(_('Color'), colorInput('color', el.color || '#000000')));
+				rows.push(field(_('Align'), selectInput('text_align', el.text_align || 'left', [['left', _('Left')], ['center', _('Center')], ['right', _('Right')]])));
+				rows.push(field(_('Transform'), selectInput('text_transform', el.text_transform || 'none', [
+					['none', _('None')], ['uppercase', _('UPPERCASE')], ['lowercase', _('lowercase')], ['capitalize', _('Capitalize')],
+				])));
+				rows.push(field(_('Letter spacing (mm)'), numberInput('letter_spacing_mm', el.letter_spacing_mm || 0)));
+			}
 		}
 
 		rows.push(
@@ -651,6 +667,18 @@
 			id: uid('qr'), type: 'qr',
 			x_mm: 1, y_mm: 1, width_mm: size, height_mm: size,
 			correct_level: 'L',
+		};
+		elements.push(el);
+		selectElement(el.id);
+		snapshot();
+	});
+
+	addBarcodeLink.addEventListener('click', function (event) {
+		event.preventDefault();
+		var el = {
+			id: uid('barcode'), type: 'barcode',
+			x_mm: 1, y_mm: 1, width_mm: Math.max(10, canvasWidthMm - 2), height_mm: Math.max(5, canvasHeightMm / 2),
+			barcode_format: 'CODE128', binding: 'object', color: '#000000',
 		};
 		elements.push(el);
 		selectElement(el.id);

@@ -138,6 +138,65 @@ class LayoutToHtmlTests(SimpleTestCase):
         self.assertIn('width:40.0mm', html)
         self.assertIn('height:12.0mm', html)
 
+    def test_barcode_element_renders_attributes_and_position(self):
+        layout = {'elements': [
+            {'id': 'b1', 'type': 'barcode', 'x_mm': 1, 'y_mm': 2, 'width_mm': 20, 'height_mm': 10,
+             'barcode_format': 'EAN13', 'color': '#ff0000'},
+        ]}
+        html = layout_to_html(layout, 40, 12)
+        self.assertIn('class="netbox-labels-barcode"', html)
+        self.assertIn('data-barcode-format="EAN13"', html)
+        self.assertIn('data-barcode-color="#ff0000"', html)
+        self.assertIn('left:1.0mm', html)
+        self.assertIn('top:2.0mm', html)
+
+    def test_barcode_element_invalid_format_falls_back_to_code128(self):
+        layout = {'elements': [{'id': 'b1', 'type': 'barcode', 'barcode_format': 'nonsense'}]}
+        html = layout_to_html(layout)
+        self.assertIn('data-barcode-format="CODE128"', html)
+
+    def test_barcode_element_defaults_to_black_and_code128(self):
+        layout = {'elements': [{'id': 'b1', 'type': 'barcode'}]}
+        html = layout_to_html(layout)
+        self.assertIn('data-barcode-format="CODE128"', html)
+        self.assertIn('data-barcode-color="#000000"', html)
+
+    def test_barcode_element_encodes_the_bound_value_as_inner_text_not_an_attribute(self):
+        layout = {'elements': [{'id': 'b1', 'type': 'barcode', 'binding': 'object'}]}
+        html = layout_to_html(layout)
+        opening_tag_end = html.index('>', html.index('<canvas'))
+        self.assertIn('{{ object }}', html[opening_tag_end:])
+
+    def test_barcode_static_binding_escapes_text_against_content_breakout(self):
+        layout = {'elements': [
+            {'id': 'b1', 'type': 'barcode', 'binding': 'static', 'text': '<script>alert(1)</script>'},
+        ]}
+        html = layout_to_html(layout)
+        self.assertNotIn('<script>', html)
+        self.assertIn('&lt;script&gt;', html)
+
+    def test_barcode_custom_binding_with_a_quote_in_the_expression_does_not_break_the_attributes(self):
+        # Regression test: the encoded value must be embedded as the <canvas>
+        # element's inner text (like text_content() already is for
+        # _render_text_element's <div>), not inside a data-*="..." attribute
+        # — a "custom"/"format" binding's admin-authored expression is not
+        # attribute-escaped, so a literal `"` in it (e.g. a dict-style
+        # lookup) would otherwise break out of a quoted attribute.
+        layout = {'elements': [
+            {'id': 'b1', 'type': 'barcode', 'binding': 'custom', 'expr': 'object.get("x")'},
+        ]}
+        html = layout_to_html(layout)
+        self.assertIn('data-barcode-format="CODE128"', html)
+        self.assertIn('data-barcode-color="#000000"', html)
+        opening_tag_end = html.index('>', html.index('<canvas'))
+        self.assertIn('object.get("x")', html[opening_tag_end:])
+
+    def test_barcode_element_escapes_color_against_attribute_breakout(self):
+        layout = {'elements': [{'id': 'b1', 'type': 'barcode', 'color': '"><script>alert(1)</script>'}]}
+        html = layout_to_html(layout)
+        self.assertNotIn('<script>', html)
+        self.assertIn('&lt;script&gt;', html)
+
 
 class LayoutToCssTests(SimpleTestCase):
     def test_uses_period_decimal_not_locale_comma(self):
