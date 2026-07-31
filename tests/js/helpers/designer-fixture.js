@@ -36,6 +36,7 @@ function designerFixtureHtml(options) {
     '    <a href="#" id="qr-add-text">Text</a>' +
     '    <a href="#" id="qr-add-image">Image</a>' +
     '    <a href="#" id="qr-add-qr">QR Code</a>' +
+    '    <a href="#" id="qr-add-barcode">Barcode</a>' +
     '    <a href="#" id="qr-add-icon">Icon</a>' +
     '    <input type="file" id="qr-image-file-input" accept="image/*">' +
     '    <span id="qr-dims-label"></span>' +

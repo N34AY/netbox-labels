@@ -52,6 +52,7 @@ function els() {
     gridSize: document.getElementById('qr-grid-size'),
     addText: document.getElementById('qr-add-text'),
     addQr: document.getElementById('qr-add-qr'),
+    addBarcode: document.getElementById('qr-add-barcode'),
     properties: document.getElementById('qr-properties-body'),
     widthInput: document.getElementById('qr-canvas-width'),
     heightInput: document.getElementById('qr-canvas-height'),
@@ -85,6 +86,7 @@ function mouseup() {
 
 const TEXT_EL = { id: 'text-1', type: 'text', x_mm: 2, y_mm: 2, width_mm: 20, height_mm: 5, binding: 'static', text: 'Hello' };
 const QR_EL = { id: 'qr-1', type: 'qr', x_mm: 5, y_mm: 5, width_mm: 10, height_mm: 10, correct_level: 'H' };
+const BARCODE_EL = { id: 'barcode-1', type: 'barcode', x_mm: 2, y_mm: 2, width_mm: 30, height_mm: 10, barcode_format: 'EAN13', binding: 'object', color: '#000000' };
 
 afterEach(() => {
   delete global.fetch;
@@ -137,6 +139,31 @@ describe('selection and properties panel', () => {
     loadDesigner({ elements: [TEXT_EL] });
     expect(els().properties.textContent).toMatch(/Select an element/);
   });
+
+  test('selecting a barcode element shows the shared binding UI plus format/color, but no text-only styling fields', () => {
+    loadDesigner({ elements: [BARCODE_EL] });
+    mousedown(qrEls()[0], 0, 0);
+    mouseup();
+
+    const { properties } = els();
+    expect(properties.querySelector('[data-prop="binding"]').value).toBe('object');
+    expect(properties.querySelector('[data-prop="barcode_format"]').value).toBe('EAN13');
+    expect(properties.querySelector('[data-prop="color"]')).not.toBeNull();
+    expect(properties.querySelector('[data-prop="font_size_mm"]')).toBeNull();
+    expect(properties.querySelector('[data-prop="text_align"]')).toBeNull();
+  });
+
+  test('switching a barcode element to a static binding shows a text field, mirroring text elements', () => {
+    loadDesigner({ elements: [BARCODE_EL] });
+    mousedown(qrEls()[0], 0, 0);
+    mouseup();
+
+    const bindingSelect = els().properties.querySelector('[data-prop="binding"]');
+    bindingSelect.value = 'static';
+    bindingSelect.dispatchEvent(new Event('input', { bubbles: true }));
+
+    expect(els().properties.querySelector('[data-prop="text"]')).not.toBeNull();
+  });
 });
 
 describe('add / delete elements', () => {
@@ -169,6 +196,17 @@ describe('add / delete elements', () => {
     mouseup();
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Delete', bubbles: true }));
     expect(qrEls()).toHaveLength(0);
+  });
+
+  test('adding a barcode element appends it with CODE128/object defaults, selects it, and enables undo', () => {
+    loadDesigner({ elements: [] });
+    els().addBarcode.click();
+
+    expect(qrEls()).toHaveLength(1);
+    expect(els().undo.disabled).toBe(false);
+    expect(qrEls()[0].textContent).toContain('CODE128');
+    expect(els().properties.querySelector('[data-prop="binding"]')).not.toBeNull();
+    expect(els().properties.querySelector('[data-prop="barcode_format"]').value).toBe('CODE128');
   });
 });
 
