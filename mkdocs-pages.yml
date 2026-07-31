@@ -1,0 +1,20 @@
+# Config for the public GitHub Pages deployment (see
+# .github/workflows/docs-pages.yml) — reuses everything from mkdocs.yml
+# (nav, theme, markdown_extensions) via INHERIT, overriding only what
+# differs for a real, live, publicly-hosted site instead of a copy embedded
+# in the plugin's own installed package:
+#   - site_dir: mkdocs' own default ("site"), not nested under
+#     docs/models/netbox_labels/ — that nesting exists solely so the
+#     NetBox-embedded copy avoids colliding with NetBox core's own static
+#     docs (see mkdocs.yml); irrelevant here, there's no STATIC_ROOT.
+#   - site_url: the real Pages URL, so absolute links/sitemap.xml resolve
+#     correctly (mkdocs.yml's site_url is just the GitHub repo, a fallback
+#     for the "read the source" link, not somewhere content is served from).
+#   - plugins: search is worth having on a real site people browse/bookmark
+#     (mkdocs.yml disables it there purely to save ~2MB in every plugin
+#     install, which doesn't apply to a Pages deploy).
+INHERIT: mkdocs.yml
+site_dir: site
+site_url: https://n34ay.github.io/netbox-labels/
+plugins:
+  - search

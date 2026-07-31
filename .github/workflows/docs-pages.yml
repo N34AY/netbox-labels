@@ -1,0 +1,51 @@
+name: Deploy docs to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - docs/**
+      - mkdocs.yml
+      - mkdocs-pages.yml
+      - .github/workflows/docs-pages.yml
+  workflow_dispatch:
+
+# Only ever one deployment at a time; a newer push should win over an
+# in-flight older one rather than queuing behind it.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install mkdocs-material
+      # Not mkdocs.yml directly: that one's site_dir/plugins are tuned for
+      # the copy embedded in the plugin's own installed package (nested
+      # path to avoid colliding with NetBox core's own static docs, search
+      # disabled to save space) — see mkdocs-pages.yml's own comments for
+      # what a real, live, publicly-hosted site needs instead.
+      - run: mkdocs build --strict -f mkdocs-pages.yml
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
