@@ -16,6 +16,14 @@ one is [netbox-docker](https://github.com/netbox-community/netbox-docker):
 3. Run migrations: `python manage.py migrate netbox_labels`.
 4. Restart NetBox (and its RQ worker, if running separately) after Python changes; static JS/CSS
    changes just need a browser refresh (and `collectstatic` if `DEBUG` is off).
+5. Optionally, seed a few clearly-fake demo objects (sites, devices, and two QR templates, all
+   named "Acme ...") to have something to click around or screenshot without touching real data:
+
+   ```bash
+   python manage.py netbox_labels_demo_data
+   # Remove it again with:
+   python manage.py netbox_labels_demo_data --flush
+   ```
 
 ## Running tests
 
