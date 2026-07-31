@@ -77,6 +77,15 @@ describe('QR code rendering into [data-netbox-qr] elements', () => {
     expect(global.QRCode.mock.calls[0][1].text).toBe('PER-ELEMENT');
   });
 
+  test("the element's own inner text (a per-element binding rendered by layout.py) overrides both data-value and the global value", () => {
+    loadRenderScript(
+      jsonScript('netbox-qr-meta', { value: 'GLOBAL-VALUE' }) +
+      '<div data-netbox-qr data-value="DATA-VALUE">  https://netbox.example/dcim/sites/1/  </div>'
+    );
+
+    expect(global.QRCode.mock.calls[0][1].text).toBe('https://netbox.example/dcim/sites/1/');
+  });
+
   test('parses width/height/colors/correct-level from data attributes', () => {
     loadRenderScript(
       jsonScript('netbox-qr-meta', { value: 'x' }) +
@@ -108,5 +117,48 @@ describe('QR code rendering into [data-netbox-qr] elements', () => {
     );
 
     expect(global.QRCode).toHaveBeenCalledTimes(2);
+  });
+
+  test('a thrown error from one element is caught, shown as a placeholder, and does not stop the others from drawing', () => {
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    document.body.innerHTML = jsonScript('netbox-qr-meta', { value: 'x' }) + '<div data-netbox-qr>bad</div><div data-netbox-qr>222</div>';
+    global.QRCode = jest.fn().mockImplementationOnce(() => {
+      throw new Error('bad value');
+    });
+    global.QRCode.CorrectLevel = { L: 1, M: 0, Q: 3, H: 2 };
+    jest.resetModules();
+    delete window.NetBoxQR;
+    require(SCRIPT_PATH);
+
+    expect(global.QRCode).toHaveBeenCalledTimes(2);
+    expect(console.error).toHaveBeenCalledWith('[NetBoxQR]', 'render failed:', expect.any(Error));
+
+    const [bad, ok] = document.querySelectorAll('[data-netbox-qr]');
+    expect(bad.title).toBe('[NetBoxQR] bad value');
+    expect(bad.textContent).toBe('!');
+    expect(ok.title).toBe('');
+  });
+
+  test('when embedded in an iframe, a rejected value is reported to the parent window, prefixed with the element id', () => {
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    document.body.innerHTML = jsonScript('netbox-qr-meta', { value: 'x' }) + '<div data-netbox-qr data-element-id="qr-2">bad</div>';
+    global.QRCode = jest.fn().mockImplementationOnce(() => {
+      throw new Error('bad value');
+    });
+    global.QRCode.CorrectLevel = { L: 1, M: 0, Q: 3, H: 2 };
+    Object.defineProperty(window, 'top', { value: {}, configurable: true });
+    const postMessage = jest.fn();
+    Object.defineProperty(window, 'parent', { value: { postMessage }, configurable: true });
+    jest.resetModules();
+    delete window.NetBoxQR;
+    require(SCRIPT_PATH);
+
+    expect(postMessage).toHaveBeenCalledWith(
+      { type: 'netbox-qr-client-error', source: 'qr', errors: ['qr-2: bad value'] },
+      '*'
+    );
+
+    Object.defineProperty(window, 'top', { value: window, configurable: true });
+    Object.defineProperty(window, 'parent', { value: window, configurable: true });
   });
 });

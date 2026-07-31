@@ -73,4 +73,51 @@ describe('barcode rendering into .netbox-labels-barcode canvases', () => {
     expect(global.JsBarcode).toHaveBeenCalledTimes(2);
     expect(console.error).toHaveBeenCalledWith('[NetBoxQR/Barcode]', 'render failed:', expect.any(Error));
   });
+
+  test('a canvas whose value JsBarcode rejects gets an error tooltip instead of staying silently blank', () => {
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    global.JsBarcode = jest.fn().mockImplementationOnce(() => {
+      throw new Error('"bad" is not a valid input for EAN13');
+    });
+    document.body.innerHTML = '<canvas class="netbox-labels-barcode">bad</canvas>';
+    jest.resetModules();
+    require(SCRIPT_PATH);
+
+    const canvas = document.querySelector('.netbox-labels-barcode');
+    expect(canvas.title).toBe('[NetBoxQR/Barcode] "bad" is not a valid input for EAN13');
+  });
+
+  test('when embedded in an iframe, a rejected value is reported to the parent window, prefixed with the element id', () => {
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    global.JsBarcode = jest.fn().mockImplementationOnce(() => {
+      throw new Error('bad value');
+    });
+    document.body.innerHTML = '<canvas class="netbox-labels-barcode" data-element-id="barcode-3">bad</canvas>';
+    Object.defineProperty(window, 'top', { value: {}, configurable: true });
+    const postMessage = jest.fn();
+    Object.defineProperty(window, 'parent', { value: { postMessage }, configurable: true });
+    jest.resetModules();
+    require(SCRIPT_PATH);
+
+    expect(postMessage).toHaveBeenCalledWith(
+      { type: 'netbox-qr-client-error', source: 'barcode', errors: ['barcode-3: bad value'] },
+      '*'
+    );
+
+    Object.defineProperty(window, 'top', { value: window, configurable: true });
+    Object.defineProperty(window, 'parent', { value: window, configurable: true });
+  });
+
+  test('does not post a message to the parent when not embedded in an iframe', () => {
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    jest.spyOn(window, 'postMessage');
+    global.JsBarcode = jest.fn().mockImplementationOnce(() => {
+      throw new Error('bad value');
+    });
+    document.body.innerHTML = '<canvas class="netbox-labels-barcode">bad</canvas>';
+    jest.resetModules();
+    require(SCRIPT_PATH);
+
+    expect(window.postMessage).not.toHaveBeenCalled();
+  });
 });

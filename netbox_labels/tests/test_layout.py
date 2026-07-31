@@ -49,6 +49,9 @@ class TextContentTests(SimpleTestCase):
     def test_object_binding(self):
         self.assertEqual(text_content({'binding': 'object'}), '{{ object }}')
 
+    def test_object_url_binding(self):
+        self.assertEqual(text_content({'binding': 'object_url'}), '{{ object_url }}')
+
     def test_object_type_binding(self):
         self.assertEqual(text_content({'binding': 'object_type'}), '{{ object_type.model }}')
 
@@ -104,18 +107,70 @@ class RenderFormatStringTests(SimpleTestCase):
 class LayoutToHtmlTests(SimpleTestCase):
     def test_qr_element_renders_data_attributes_and_position(self):
         layout = {'elements': [
-            {'id': 'q1', 'type': 'qr', 'x_mm': 1, 'y_mm': 2, 'width_mm': 10, 'height_mm': 10, 'correct_level': 'L'},
+            {'id': 'q1', 'type': 'qr', 'x_mm': 1, 'y_mm': 2, 'width_mm': 10, 'height_mm': 10,
+             'correct_level': 'L', 'color': '#ff0000'},
         ]}
         html = layout_to_html(layout, 40, 12)
         self.assertIn('data-netbox-qr', html)
+        self.assertIn('data-element-id="q1"', html)
         self.assertIn('data-correct-level="L"', html)
+        self.assertIn('data-color-dark="#ff0000"', html)
         self.assertIn('left:1.0mm', html)
         self.assertIn('top:2.0mm', html)
+
+    def test_qr_element_defaults_to_black_when_no_color_given(self):
+        layout = {'elements': [{'id': 'q1', 'type': 'qr'}]}
+        html = layout_to_html(layout)
+        self.assertIn('data-color-dark="#000000"', html)
+
+    def test_qr_element_escapes_color_against_attribute_breakout(self):
+        layout = {'elements': [{'id': 'q1', 'type': 'qr', 'color': '"><script>alert(1)</script>'}]}
+        html = layout_to_html(layout)
+        self.assertNotIn('<script>', html)
+        self.assertIn('&lt;script&gt;', html)
 
     def test_qr_element_invalid_correct_level_falls_back_to_h(self):
         layout = {'elements': [{'id': 'q1', 'type': 'qr', 'correct_level': 'nonsense'}]}
         html = layout_to_html(layout)
         self.assertIn('data-correct-level="H"', html)
+
+    def test_qr_element_with_no_binding_renders_no_inner_text(self):
+        # Regression test: a qr element saved before per-element bindings
+        # existed must keep falling back to the template-wide QR code value
+        # field (window.NetBoxQR.value in qr-render.js), not silently start
+        # encoding some new default value of its own.
+        layout = {'elements': [{'id': 'q1', 'type': 'qr'}]}
+        html = layout_to_html(layout)
+        opening_tag_end = html.index('>', html.index('<div data-netbox-qr'))
+        closing_tag_start = html.index('</div>', opening_tag_end)
+        self.assertEqual(html[opening_tag_end + 1:closing_tag_start], '')
+
+    def test_qr_element_with_binding_encodes_the_bound_value_as_inner_text(self):
+        layout = {'elements': [{'id': 'q1', 'type': 'qr', 'binding': 'object_url'}]}
+        html = layout_to_html(layout)
+        opening_tag_end = html.index('>', html.index('<div data-netbox-qr'))
+        self.assertIn('{{ object_url }}', html[opening_tag_end:])
+
+    def test_qr_static_binding_escapes_text_against_content_breakout(self):
+        layout = {'elements': [
+            {'id': 'q1', 'type': 'qr', 'binding': 'static', 'text': '<script>alert(1)</script>'},
+        ]}
+        html = layout_to_html(layout)
+        self.assertNotIn('<script>', html)
+        self.assertIn('&lt;script&gt;', html)
+
+    def test_qr_custom_binding_with_a_quote_in_the_expression_does_not_break_the_attributes(self):
+        # Mirrors the equivalent barcode test: the encoded value must be
+        # embedded as the div's inner text, not inside a data-*="..."
+        # attribute, since a "custom"/"format" binding's admin-authored
+        # expression isn't attribute-escaped.
+        layout = {'elements': [
+            {'id': 'q1', 'type': 'qr', 'binding': 'custom', 'expr': 'object.get("x")'},
+        ]}
+        html = layout_to_html(layout)
+        self.assertIn('data-correct-level="H"', html)
+        opening_tag_end = html.index('>', html.index('<div data-netbox-qr'))
+        self.assertIn('object.get("x")', html[opening_tag_end:])
 
     def test_image_element_escapes_src_against_attribute_breakout(self):
         layout = {'elements': [{'id': 'i1', 'type': 'image', 'src': '"><script>alert(1)</script>'}]}
@@ -145,6 +200,7 @@ class LayoutToHtmlTests(SimpleTestCase):
         ]}
         html = layout_to_html(layout, 40, 12)
         self.assertIn('class="netbox-labels-barcode"', html)
+        self.assertIn('data-element-id="b1"', html)
         self.assertIn('data-barcode-format="EAN13"', html)
         self.assertIn('data-barcode-color="#ff0000"', html)
         self.assertIn('left:1.0mm', html)
@@ -193,6 +249,18 @@ class LayoutToHtmlTests(SimpleTestCase):
 
     def test_barcode_element_escapes_color_against_attribute_breakout(self):
         layout = {'elements': [{'id': 'b1', 'type': 'barcode', 'color': '"><script>alert(1)</script>'}]}
+        html = layout_to_html(layout)
+        self.assertNotIn('<script>', html)
+        self.assertIn('&lt;script&gt;', html)
+
+    def test_barcode_element_escapes_id_against_attribute_breakout(self):
+        layout = {'elements': [{'id': '"><script>alert(1)</script>', 'type': 'barcode'}]}
+        html = layout_to_html(layout)
+        self.assertNotIn('<script>', html)
+        self.assertIn('&lt;script&gt;', html)
+
+    def test_qr_element_escapes_id_against_attribute_breakout(self):
+        layout = {'elements': [{'id': '"><script>alert(1)</script>', 'type': 'qr'}]}
         html = layout_to_html(layout)
         self.assertNotIn('<script>', html)
         self.assertIn('&lt;script&gt;', html)

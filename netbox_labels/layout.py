@@ -13,25 +13,30 @@ Layout shape:
         {
             "id": str, "type": "text" | "qr" | "image" | "barcode",
             "x_mm": float, "y_mm": float, "width_mm": float, "height_mm": float,
-            # text and barcode:
-            "binding": "static" | "object" | "object_type" | "custom" | "format",
+            # text, barcode and qr:
+            "binding": "static" | "object" | "object_url" | "object_type" | "custom" | "format",
             "text": str,   # used when binding == "static"
             "expr": str,   # used when binding == "custom" (a Jinja2 expression, no {{ }})
             "format": str, # used when binding == "format" (literal text with ${expr}
                             # placeholders, e.g. "Ip - ${object.primary_ip}")
+            "color": str,  # text/module color — foreground text color, barcode line
+                            # color, or qr's dark-module color, depending on type
             # text only:
             "font_size_mm": float, "font_weight": "normal" | "bold",
-            "color": str, "text_align": "left" | "center" | "right",
+            "text_align": "left" | "center" | "right",
             "text_transform": "none" | "uppercase" | "lowercase" | "capitalize",
             "letter_spacing_mm": float,
             # qr only:
             "correct_level": "L" | "M" | "Q" | "H",
+            # A qr element with no "binding" key at all (only ever true of
+            # elements saved before per-element bindings existed) keeps its
+            # original behavior: falling back to the template-wide qr_value
+            # field (see _render_qr_element and render.html's window.NetBoxQR).
             # image only:
             "src": str,  # a data: URI (uploaded file, embedded inline)
             # barcode only:
             "barcode_format": "CODE128" | "EAN13" | "EAN8" | "UPC" | "CODE39" | "ITF14" |
                                "MSI" | "pharmacode" | "codabar",
-            # barcode also uses "color" (line/text color), like text elements do.
         },
         ...
     ],
@@ -106,6 +111,8 @@ def text_content(element):
         return '{% raw %}' + escape(element.get('text', '')) + '{% endraw %}'
     if binding == 'object':
         return '{{ object }}'
+    if binding == 'object_url':
+        return '{{ object_url }}'
     if binding == 'object_type':
         return '{{ object_type.model }}'
     if binding == 'custom':
@@ -136,9 +143,24 @@ def _render_qr_element(element):
     if correct_level not in ('L', 'M', 'Q', 'H'):
         correct_level = 'H'
     style = _element_style(element) + 'background:#fff;'
+    # Like _render_barcode_element, the bound value is embedded as the div's
+    # own inner text (read via .textContent by qr-render.js) rather than a
+    # data-*="..." attribute, for the same reason: a "custom"/"format"
+    # binding's admin-authored expression isn't attribute-escaped. An
+    # element with no "binding" key at all predates per-element bindings —
+    # it's left with no inner text so qr-render.js falls back to the
+    # template-wide window.NetBoxQR.value, preserving its original behavior.
+    value_content = text_content(element) if 'binding' in element else ''
+    element_id = escape(str(element.get('id', '')))
+    # data-color-dark is already read by qr-render.js (it defaults to
+    # '#000000' itself when the attribute is absent, same as this) — this
+    # was simply never emitted before, so every qr code rendered black
+    # regardless of what an element's own "color" said, unlike barcode/text.
+    color = escape(element.get('color') or '#000000')
     return (
-        f'<div data-netbox-qr data-width="300" data-height="300" '
-        f'data-correct-level="{escape(correct_level)}" style="{style}"></div>'
+        f'<div data-netbox-qr data-element-id="{element_id}" data-width="300" data-height="300" '
+        f'data-correct-level="{escape(correct_level)}" data-color-dark="{color}" style="{style}">'
+        f'{value_content}</div>'
     )
 
 
@@ -164,8 +186,9 @@ def _render_barcode_element(element):
     # contains admin-authored Jinja2 source that isn't attribute-escaped, so
     # embedding it inside a quoted attribute could let a literal `"` in an
     # expression break out of the attribute.
+    element_id = escape(str(element.get('id', '')))
     return (
-        f'<canvas class="netbox-labels-barcode" '
+        f'<canvas class="netbox-labels-barcode" data-element-id="{element_id}" '
         f'data-barcode-format="{escape(barcode_format)}" data-barcode-color="{color}" '
         f'width="600" height="200" style="{style}">{text_content(element)}</canvas>'
     )

@@ -94,14 +94,26 @@ class SanitizeLayoutForContextTests(TestCase):
         return {'object': None, 'object_type': None, 'object_url': '', 'object_data': {}}
 
     def test_failing_element_is_blanked_and_reported(self):
-        layout = {'elements': [{'id': 'bad', 'type': 'text', 'binding': 'custom', 'expr': '1/0'}]}
+        layout = {'elements': [{'id': 'bad', 'type': 'text', 'binding': 'custom', 'expr': '1/0', 'color': '#00ff00'}]}
         safe_layout, errors = rendering.sanitize_layout_for_context(layout, self._context())
         self.assertEqual(len(errors), 1)
         self.assertEqual(errors[0][0], 'bad')
         self.assertIn('ZeroDivisionError', errors[0][1])
         blanked = safe_layout['elements'][0]
         self.assertEqual(blanked['binding'], 'static')
-        self.assertEqual(blanked['text'], '')
+        # Shows the broken expression itself, in red, instead of going blank
+        # — visible on the label, not just in the preview's error panel.
+        self.assertEqual(blanked['text'], '1/0')
+        self.assertEqual(blanked['color'], '#dc3545')
+
+    def test_failing_format_binding_shows_the_raw_format_string(self):
+        layout = {'elements': [{'id': 'bad', 'type': 'text', 'binding': 'format', 'format': 'IP - ${1/0}'}]}
+        safe_layout, errors = rendering.sanitize_layout_for_context(layout, self._context())
+        self.assertEqual(len(errors), 1)
+        blanked = safe_layout['elements'][0]
+        self.assertEqual(blanked['binding'], 'static')
+        self.assertEqual(blanked['text'], 'IP - ${1/0}')
+        self.assertEqual(blanked['color'], '#dc3545')
 
     def test_working_elements_are_untouched_and_no_error_reported_for_them(self):
         layout = {'elements': [
@@ -112,21 +124,69 @@ class SanitizeLayoutForContextTests(TestCase):
         self.assertEqual([e[0] for e in errors], ['bad'])
         self.assertEqual(safe_layout['elements'][0], layout['elements'][0])
 
-    def test_non_text_elements_are_never_touched(self):
+    def test_image_elements_are_never_touched(self):
+        layout = {'elements': [{'id': 'i1', 'type': 'image', 'src': 'x'}]}
+        safe_layout, errors = rendering.sanitize_layout_for_context(layout, self._context())
+        self.assertEqual(errors, [])
+        self.assertEqual(safe_layout['elements'][0], layout['elements'][0])
+
+    def test_qr_element_with_no_custom_or_format_binding_is_never_touched(self):
         layout = {'elements': [{'id': 'q1', 'type': 'qr', 'correct_level': 'H'}]}
         safe_layout, errors = rendering.sanitize_layout_for_context(layout, self._context())
         self.assertEqual(errors, [])
         self.assertEqual(safe_layout['elements'][0], layout['elements'][0])
 
-    def test_barcode_failing_custom_binding_is_blanked_and_reported_like_text(self):
-        layout = {'elements': [{'id': 'bad', 'type': 'barcode', 'binding': 'custom', 'expr': '1/0'}]}
+    def test_qr_failing_custom_binding_is_blanked_and_reported_like_text(self):
+        layout = {'elements': [{'id': 'bad', 'type': 'qr', 'binding': 'custom', 'expr': '1/0'}]}
         safe_layout, errors = rendering.sanitize_layout_for_context(layout, self._context())
         self.assertEqual(len(errors), 1)
         self.assertEqual(errors[0][0], 'bad')
         self.assertIn('ZeroDivisionError', errors[0][1])
         blanked = safe_layout['elements'][0]
         self.assertEqual(blanked['binding'], 'static')
-        self.assertEqual(blanked['text'], '')
+        self.assertEqual(blanked['text'], '1/0')
+        # qr elements have no "color" of their own to recolor red.
+        self.assertNotIn('color', blanked)
+
+    def test_qr_failing_format_binding_shows_the_raw_format_string(self):
+        layout = {'elements': [{'id': 'bad', 'type': 'qr', 'binding': 'format', 'format': 'IP - ${1/0}'}]}
+        safe_layout, errors = rendering.sanitize_layout_for_context(layout, self._context())
+        self.assertEqual(len(errors), 1)
+        blanked = safe_layout['elements'][0]
+        self.assertEqual(blanked['binding'], 'static')
+        self.assertEqual(blanked['text'], 'IP - ${1/0}')
+        self.assertNotIn('color', blanked)
+
+    def test_qr_working_custom_binding_is_untouched(self):
+        layout = {'elements': [{'id': 'ok', 'type': 'qr', 'binding': 'custom', 'expr': "'12345'"}]}
+        safe_layout, errors = rendering.sanitize_layout_for_context(layout, self._context())
+        self.assertEqual(errors, [])
+        self.assertEqual(safe_layout['elements'][0], layout['elements'][0])
+
+    def test_qr_object_url_binding_is_never_test_rendered(self):
+        layout = {'elements': [{'id': 'q1', 'type': 'qr', 'binding': 'object_url'}]}
+        safe_layout, errors = rendering.sanitize_layout_for_context(layout, self._context())
+        self.assertEqual(errors, [])
+
+    def test_barcode_failing_custom_binding_is_blanked_and_reported_like_text(self):
+        layout = {'elements': [{'id': 'bad', 'type': 'barcode', 'binding': 'custom', 'expr': '1/0', 'color': '#00ff00'}]}
+        safe_layout, errors = rendering.sanitize_layout_for_context(layout, self._context())
+        self.assertEqual(len(errors), 1)
+        self.assertEqual(errors[0][0], 'bad')
+        self.assertIn('ZeroDivisionError', errors[0][1])
+        blanked = safe_layout['elements'][0]
+        self.assertEqual(blanked['binding'], 'static')
+        self.assertEqual(blanked['text'], '1/0')
+        self.assertEqual(blanked['color'], '#dc3545')
+
+    def test_barcode_failing_format_binding_shows_the_raw_format_string(self):
+        layout = {'elements': [{'id': 'bad', 'type': 'barcode', 'binding': 'format', 'format': 'IP - ${1/0}', 'color': '#00ff00'}]}
+        safe_layout, errors = rendering.sanitize_layout_for_context(layout, self._context())
+        self.assertEqual(len(errors), 1)
+        blanked = safe_layout['elements'][0]
+        self.assertEqual(blanked['binding'], 'static')
+        self.assertEqual(blanked['text'], 'IP - ${1/0}')
+        self.assertEqual(blanked['color'], '#dc3545')
 
     def test_barcode_working_custom_binding_is_untouched(self):
         layout = {'elements': [{'id': 'ok', 'type': 'barcode', 'binding': 'custom', 'expr': "'12345'"}]}

@@ -27,12 +27,13 @@ function designerFixtureHtml(options) {
     '    <button type="button" id="qr-zoom-reset"><span id="qr-zoom-label">100%</span></button>' +
     '    <button type="button" id="qr-zoom-in"></button>' +
     '    <button type="button" id="qr-grid-toggle"></button>' +
-    '    <select id="qr-grid-size">' +
-    '      <option value="1">1 mm</option>' +
-    '      <option value="2">2 mm</option>' +
-    '      <option value="5" selected>5 mm</option>' +
-    '      <option value="10">10 mm</option>' +
-    '    </select>' +
+    '    <button type="button" id="qr-grid-size-btn"><span id="qr-grid-size-label">5 mm</span></button>' +
+    '    <ul>' +
+    '      <li><a href="#" class="qr-grid-size-option" data-value="1">1 mm</a></li>' +
+    '      <li><a href="#" class="qr-grid-size-option" data-value="2">2 mm</a></li>' +
+    '      <li><a href="#" class="qr-grid-size-option active" data-value="5">5 mm</a></li>' +
+    '      <li><a href="#" class="qr-grid-size-option" data-value="10">10 mm</a></li>' +
+    '    </ul>' +
     '    <a href="#" id="qr-add-text">Text</a>' +
     '    <a href="#" id="qr-add-image">Image</a>' +
     '    <a href="#" id="qr-add-qr">QR Code</a>' +
