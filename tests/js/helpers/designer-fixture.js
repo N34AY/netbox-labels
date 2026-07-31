@@ -36,6 +36,7 @@ function designerFixtureHtml(options) {
     '    <a href="#" id="qr-add-text">Text</a>' +
     '    <a href="#" id="qr-add-image">Image</a>' +
     '    <a href="#" id="qr-add-qr">QR Code</a>' +
+    '    <a href="#" id="qr-add-icon">Icon</a>' +
     '    <input type="file" id="qr-image-file-input" accept="image/*">' +
     '    <span id="qr-dims-label"></span>' +
     '    <input type="number" id="qr-canvas-width">' +
@@ -67,6 +68,12 @@ function designerFixtureHtml(options) {
     '      <pre id="qr-preview-data-json"></pre>' +
     '    </div>' +
     '  </div>' +
+    '</div>' +
+    '<div id="qr-icon-picker-modal">' +
+    '  <button type="button" data-bs-dismiss="modal"></button>' +
+    '  <input type="text" id="qr-icon-search">' +
+    '  <div id="qr-icon-results"></div>' +
+    '  <p id="qr-icon-more-hint" class="d-none"></p>' +
     '</div>' +
     '<script type="application/json" id="qr-layout-data">' + JSON.stringify({ elements: elements }) + '</script>'
   );
