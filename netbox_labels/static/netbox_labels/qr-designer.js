@@ -93,6 +93,40 @@
 	}
 
 	//
+	// Copy / paste
+	//
+
+	var clipboardElement = null;
+
+	function isTyping() {
+		var active = document.activeElement;
+		return active && ['INPUT', 'TEXTAREA', 'SELECT'].indexOf(active.tagName) !== -1;
+	}
+
+	function copySelected() {
+		if (isTyping() || !selectedId) {
+			return;
+		}
+		var el = findElement(selectedId);
+		if (el) {
+			clipboardElement = JSON.parse(JSON.stringify(el));
+		}
+	}
+
+	function pasteClipboard() {
+		if (isTyping() || !clipboardElement) {
+			return;
+		}
+		var clone = JSON.parse(JSON.stringify(clipboardElement));
+		clone.id = uid(clone.type);
+		clone.x_mm = Math.max(0, round1(clone.x_mm + 2));
+		clone.y_mm = Math.max(0, round1(clone.y_mm + 2));
+		elements.push(clone);
+		selectElement(clone.id);
+		snapshot();
+	}
+
+	//
 	// Undo / redo
 	//
 
@@ -542,9 +576,7 @@
 	});
 
 	document.addEventListener('keydown', function (event) {
-		var active = document.activeElement;
-		var typing = active && ['INPUT', 'TEXTAREA', 'SELECT'].indexOf(active.tagName) !== -1;
-		if (!typing && selectedId && (event.key === 'Delete' || event.key === 'Backspace')) {
+		if (!isTyping() && selectedId && (event.key === 'Delete' || event.key === 'Backspace')) {
 			deleteElement(selectedId);
 		}
 		if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') {
@@ -554,6 +586,16 @@
 			} else {
 				undo();
 			}
+		}
+		if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'y') {
+			event.preventDefault();
+			redo();
+		}
+		if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'c') {
+			copySelected();
+		}
+		if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'v') {
+			pasteClipboard();
 		}
 	});
 

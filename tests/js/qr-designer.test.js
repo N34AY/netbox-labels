@@ -6,12 +6,37 @@ const { designerFixtureHtml } = require('./helpers/designer-fixture');
 const SCRIPT_PATH = path.join(__dirname, '../../netbox_labels/static/netbox_labels/qr-designer.js');
 const BASE_PX_PER_MM = 8;
 
+// qr-designer.js attaches a handful of listeners directly on `document`
+// (keydown/mousemove/mouseup), which in a real page load once per navigation.
+// jsdom keeps a single `document` for this whole test file though, so without
+// this bookkeeping those listeners would pile up across every loadDesigner()
+// call and keep firing — against their own, by-then-detached DOM — alongside
+// the current test's. Undo/redo/delete happen to self-null and no-op safely
+// in that situation, but it's not something to rely on in general, so each
+// load detaches whatever the previous one registered before requiring fresh.
+let trackedDocumentListeners = [];
+
 function loadDesigner(fixtureOptions) {
-  document.body.innerHTML = designerFixtureHtml(fixtureOptions);
-  jest.resetModules();
-  jest.isolateModules(() => {
-    require(SCRIPT_PATH);
+  trackedDocumentListeners.forEach(({ type, handler, options }) => {
+    document.removeEventListener(type, handler, options);
   });
+  trackedDocumentListeners = [];
+
+  document.body.innerHTML = designerFixtureHtml(fixtureOptions);
+
+  const originalAddEventListener = document.addEventListener.bind(document);
+  document.addEventListener = function (type, handler, options) {
+    trackedDocumentListeners.push({ type, handler, options });
+    return originalAddEventListener(type, handler, options);
+  };
+  try {
+    jest.resetModules();
+    jest.isolateModules(() => {
+      require(SCRIPT_PATH);
+    });
+  } finally {
+    document.addEventListener = originalAddEventListener;
+  }
 }
 
 function els() {
@@ -169,6 +194,78 @@ describe('undo / redo', () => {
     els().addText.click();
     expect(undo.disabled).toBe(false);
     expect(redo.disabled).toBe(true);
+  });
+
+  test('Ctrl+Y also redoes, as an alternative to Ctrl+Shift+Z', () => {
+    loadDesigner({ elements: [] });
+    els().addText.click();
+    expect(qrEls()).toHaveLength(1);
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, bubbles: true }));
+    expect(qrEls()).toHaveLength(0);
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'y', ctrlKey: true, bubbles: true }));
+    expect(qrEls()).toHaveLength(1);
+  });
+});
+
+describe('copy / paste', () => {
+  function ctrlKey(key) {
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: key, ctrlKey: true, bubbles: true }));
+  }
+
+  test('Ctrl+C then Ctrl+V duplicates the selected element with a +2mm offset, a fresh id, and other properties intact', () => {
+    loadDesigner({ elements: [TEXT_EL] });
+    mousedown(qrEls()[0], 0, 0); // select
+    mouseup();
+
+    ctrlKey('c');
+    ctrlKey('v');
+
+    expect(qrEls()).toHaveLength(2);
+    const pasted = qrEls()[1];
+    expect(pasted.dataset.id).not.toBe(TEXT_EL.id);
+    expect(pasted.style.left).toBe((TEXT_EL.x_mm + 2) * BASE_PX_PER_MM + 'px');
+    expect(pasted.style.top).toBe((TEXT_EL.y_mm + 2) * BASE_PX_PER_MM + 'px');
+    expect(pasted.style.width).toBe(TEXT_EL.width_mm * BASE_PX_PER_MM + 'px');
+    expect(pasted.textContent).toContain('Hello');
+  });
+
+  test('pasting selects the new element and is undoable as a single step', () => {
+    loadDesigner({ elements: [TEXT_EL] });
+    mousedown(qrEls()[0], 0, 0);
+    mouseup();
+
+    ctrlKey('c');
+    ctrlKey('v');
+    expect(qrEls()).toHaveLength(2);
+
+    ctrlKey('z');
+    expect(qrEls()).toHaveLength(1);
+  });
+
+  test('Ctrl+V is a no-op when nothing has been copied yet', () => {
+    loadDesigner({ elements: [TEXT_EL] });
+    ctrlKey('v');
+    expect(qrEls()).toHaveLength(1);
+  });
+
+  test('Ctrl+C is a no-op when nothing is selected', () => {
+    loadDesigner({ elements: [TEXT_EL] });
+    ctrlKey('c');
+    ctrlKey('v');
+    expect(qrEls()).toHaveLength(1);
+  });
+
+  test('Ctrl+C/Ctrl+V do nothing while focus is in a form field', () => {
+    loadDesigner({ elements: [TEXT_EL] });
+    mousedown(qrEls()[0], 0, 0);
+    mouseup();
+
+    els().widthInput.focus();
+    ctrlKey('c');
+    ctrlKey('v');
+    expect(qrEls()).toHaveLength(1);
   });
 });
 
