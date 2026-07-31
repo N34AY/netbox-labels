@@ -65,6 +65,8 @@ All three run in CI on every push and pull request (`.github/workflows/test.yml`
   IIFEs with no build step, on purpose — no bundler/transpiler is part of this project's runtime
   requirements for NetBox admins).
 
+Maintainers: see [RELEASING.md](RELEASING.md) for how to cut a release.
+
 ## Reporting bugs / requesting features
 
 Use [GitHub Issues](https://github.com/N34AY/netbox-labels/issues). Include your NetBox and
