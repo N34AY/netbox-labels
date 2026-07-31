@@ -23,3 +23,6 @@ venv/
 
 # OS
 .DS_Store
+
+# Local planning notes, not for the repo
+version0.2.0.md

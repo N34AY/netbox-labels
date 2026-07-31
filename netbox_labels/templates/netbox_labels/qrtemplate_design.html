@@ -64,6 +64,18 @@
       </button>
     </div>
 
+    <div class="btn-group">
+      <button type="button" id="qr-grid-toggle" class="btn btn-sm btn-outline-secondary" title="{% trans 'Toggle grid / snap' %}">
+        <i class="mdi mdi-grid"></i>
+      </button>
+      <select id="qr-grid-size" class="form-select form-select-sm" title="{% trans 'Grid size' %}" style="max-width: 5.5rem;">
+        <option value="1">1 mm</option>
+        <option value="2">2 mm</option>
+        <option value="5" selected>5 mm</option>
+        <option value="10">10 mm</option>
+      </select>
+    </div>
+
     <div class="dropdown">
       <button type="button" class="btn btn-sm btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown">
         <i class="mdi mdi-plus-thick"></i> {% trans "Add" %}

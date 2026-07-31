@@ -23,6 +23,8 @@ function els() {
     zoomOut: document.getElementById('qr-zoom-out'),
     zoomReset: document.getElementById('qr-zoom-reset'),
     zoomLabel: document.getElementById('qr-zoom-label'),
+    gridToggle: document.getElementById('qr-grid-toggle'),
+    gridSize: document.getElementById('qr-grid-size'),
     addText: document.getElementById('qr-add-text'),
     addQr: document.getElementById('qr-add-qr'),
     properties: document.getElementById('qr-properties-body'),
@@ -247,6 +249,61 @@ describe('drag and resize', () => {
     expect(div.style.width).toBe((20 + 4) * BASE_PX_PER_MM + 'px');
     expect(div.style.height).toBe((5 + 3) * BASE_PX_PER_MM + 'px');
     expect(div.style.left).toBe(2 * BASE_PX_PER_MM + 'px');
+  });
+});
+
+describe('grid / snap', () => {
+  test('grid off: dragging lands on the usual whole-mm-tenths position', () => {
+    loadDesigner({ elements: [TEXT_EL] });
+    mousedown(qrEls()[0], 100, 100);
+    mousemove(100 + 8 * BASE_PX_PER_MM, 100 + 4 * BASE_PX_PER_MM); // start (2,2) + (8,4) = (10,6)
+    mouseup();
+
+    const div = qrEls()[0];
+    expect(div.style.left).toBe(10 * BASE_PX_PER_MM + 'px');
+    expect(div.style.top).toBe(6 * BASE_PX_PER_MM + 'px');
+  });
+
+  test('grid on (default 5mm): dragging snaps x/y to the nearest grid line', () => {
+    loadDesigner({ elements: [TEXT_EL] });
+    els().gridToggle.click();
+
+    mousedown(qrEls()[0], 100, 100);
+    mousemove(100 + 8 * BASE_PX_PER_MM, 100 + 4 * BASE_PX_PER_MM); // start (2,2) + (8,4) = (10,6) -> snaps to (10,5)
+    mouseup();
+
+    const div = qrEls()[0];
+    expect(div.style.left).toBe(10 * BASE_PX_PER_MM + 'px');
+    expect(div.style.top).toBe(5 * BASE_PX_PER_MM + 'px');
+  });
+
+  test('changing grid size changes the snap increment', () => {
+    loadDesigner({ elements: [TEXT_EL] });
+    els().gridToggle.click();
+    els().gridSize.value = '10';
+    els().gridSize.dispatchEvent(new Event('change', { bubbles: true }));
+
+    mousedown(qrEls()[0], 100, 100);
+    mousemove(100 + 8 * BASE_PX_PER_MM, 100 + 4 * BASE_PX_PER_MM); // start (2,2) + (8,4) = (10,6) -> snaps to (10,10)
+    mouseup();
+
+    const div = qrEls()[0];
+    expect(div.style.left).toBe(10 * BASE_PX_PER_MM + 'px');
+    expect(div.style.top).toBe(10 * BASE_PX_PER_MM + 'px');
+  });
+
+  test('toggling grid off again restores whole-mm-tenths precision', () => {
+    loadDesigner({ elements: [TEXT_EL] });
+    els().gridToggle.click();
+    els().gridToggle.click();
+
+    mousedown(qrEls()[0], 100, 100);
+    mousemove(100 + 8 * BASE_PX_PER_MM, 100 + 4 * BASE_PX_PER_MM); // start (2,2) + (8,4) = (10,6)
+    mouseup();
+
+    const div = qrEls()[0];
+    expect(div.style.left).toBe(10 * BASE_PX_PER_MM + 'px');
+    expect(div.style.top).toBe(6 * BASE_PX_PER_MM + 'px');
   });
 });
 
