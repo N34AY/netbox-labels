@@ -84,6 +84,7 @@
         <li><a class="dropdown-item" href="#" id="qr-add-text"><i class="mdi mdi-format-text"></i> {% trans "Text" %}</a></li>
         <li><a class="dropdown-item" href="#" id="qr-add-image"><i class="mdi mdi-image"></i> {% trans "Image" %}</a></li>
         <li><a class="dropdown-item" href="#" id="qr-add-qr"><i class="mdi mdi-qrcode"></i> {% trans "QR Code" %}</a></li>
+        <li><a class="dropdown-item" href="#" id="qr-add-icon" data-bs-toggle="modal" data-bs-target="#qr-icon-picker-modal"><i class="mdi mdi-shape"></i> {% trans "Icon" %}</a></li>
       </ul>
       <input type="file" id="qr-image-file-input" accept="image/*" class="d-none">
     </div>
@@ -198,7 +199,46 @@
   </div>
 </div>
 
+<div class="modal fade" id="qr-icon-picker-modal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">{% trans "Insert icon" %}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{% trans 'Close' %}"></button>
+      </div>
+      <div class="modal-body">
+        <input type="text" id="qr-icon-search" class="form-control form-control-sm mb-3" placeholder="{% trans 'Search icons…' %}" autocomplete="off">
+        <div id="qr-icon-results" class="netbox-qr-icon-results"></div>
+        <p class="text-muted small mb-0 d-none" id="qr-icon-more-hint">{% trans "Narrow your search to see more results." %}</p>
+      </div>
+    </div>
+  </div>
+</div>
+
 <style>
+  .netbox-qr-icon-results {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(2.5rem, 1fr));
+    gap: 0.25rem;
+  }
+  .netbox-qr-icon-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 1;
+    padding: 0.4rem;
+    border: 1px solid var(--tblr-border-color, #ccc);
+    border-radius: 4px;
+    background: none;
+    cursor: pointer;
+  }
+  .netbox-qr-icon-btn:hover {
+    background: var(--tblr-bg-surface-secondary, #f8f9fa);
+  }
+  .netbox-qr-icon-btn svg {
+    width: 100%;
+    height: 100%;
+  }
   .netbox-qr-preview-data {
     background: var(--tblr-bg-surface-secondary, #f8f9fa);
     border: 1px solid var(--tblr-border-color, #ccc);
@@ -223,5 +263,6 @@
 
 {{ layout|json_script:"qr-layout-data" }}
 <script src="{% url 'plugins:netbox_labels:javascript_catalog' %}"></script>
+<script src="{% static 'netbox_labels/mdi-icons-data.js' %}"></script>
 <script src="{% static 'netbox_labels/qr-designer.js' %}"></script>
 {% endblock %}

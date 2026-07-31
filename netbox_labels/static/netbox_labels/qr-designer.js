@@ -42,6 +42,9 @@
 	var addImageLink = document.getElementById('qr-add-image');
 	var addQrLink = document.getElementById('qr-add-qr');
 	var imageFileInput = document.getElementById('qr-image-file-input');
+	var iconSearchInput = document.getElementById('qr-icon-search');
+	var iconResults = document.getElementById('qr-icon-results');
+	var iconMoreHint = document.getElementById('qr-icon-more-hint');
 	var widthInput = document.getElementById('qr-canvas-width');
 	var heightInput = document.getElementById('qr-canvas-height');
 	var dimsLabel = document.getElementById('qr-dims-label');
@@ -432,6 +435,9 @@
 				'<div class="mb-2"><button type="button" class="btn btn-sm btn-outline-secondary" id="qr-replace-image">' +
 				_('Replace image') + '</button></div>'
 			);
+			if (el._icon_name) {
+				rows.push(field(_('Recolor icon'), colorInput('_icon_color', el._icon_color || '#000000')));
+			}
 		} else {
 			rows.push(field(_('Content'), selectInput('binding', el.binding || 'object', [
 				['object', _('Object (works for every type)')],
@@ -474,6 +480,9 @@
 				var prop = input.dataset.prop;
 				var value = input.type === 'number' ? (parseFloat(input.value) || 0) : input.value;
 				el[prop] = value;
+				if (prop === '_icon_color') {
+					el.src = iconSvgDataUri(el._icon_path, value);
+				}
 				renderCanvas();
 				if (prop === 'binding') {
 					renderProperties();
@@ -661,6 +670,68 @@
 			snapshot();
 		});
 	});
+
+	//
+	// Icon picker — inserts an ordinary `image` element whose src is an SVG
+	// data: URI built from the chosen MDI icon's path data, exactly like
+	// addImageLink's callback above. Needs no layout.py/rendering changes:
+	// _render_image_element already just echoes src into an <img>.
+	//
+
+	var ICON_RESULT_CAP = 300;
+
+	function iconSvgDataUri(path, color) {
+		var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">' +
+			'<path fill="' + color + '" d="' + path + '"/></svg>';
+		return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+	}
+
+	function addIconElement(name, path) {
+		var color = '#000000';
+		var el = {
+			id: uid('image'), type: 'image',
+			x_mm: 2, y_mm: 2, width_mm: 10, height_mm: 10,
+			src: iconSvgDataUri(path, color),
+			_icon_name: name, _icon_color: color, _icon_path: path,
+		};
+		elements.push(el);
+		selectElement(el.id);
+		snapshot();
+		var dismissBtn = document.querySelector('#qr-icon-picker-modal [data-bs-dismiss="modal"]');
+		if (dismissBtn) {
+			dismissBtn.click();
+		}
+	}
+
+	function renderIconResults(query) {
+		var icons = window.MDI_ICONS || {};
+		var names = Object.keys(icons);
+		if (query) {
+			names = names.filter(function (name) { return name.indexOf(query) !== -1; });
+		}
+		var truncated = names.length > ICON_RESULT_CAP;
+		names = names.slice(0, ICON_RESULT_CAP);
+
+		iconResults.innerHTML = '';
+		names.forEach(function (name) {
+			var btn = document.createElement('button');
+			btn.type = 'button';
+			btn.className = 'netbox-qr-icon-btn';
+			btn.title = name;
+			btn.innerHTML = '<svg viewBox="0 0 24 24"><path fill="currentColor" d="' + icons[name] + '"/></svg>';
+			btn.addEventListener('click', function () {
+				addIconElement(name, icons[name]);
+			});
+			iconResults.appendChild(btn);
+		});
+		iconMoreHint.classList.toggle('d-none', !truncated);
+	}
+
+	iconSearchInput.addEventListener('input', function () {
+		renderIconResults(iconSearchInput.value.trim().toLowerCase());
+	});
+
+	renderIconResults('');
 
 	//
 	// Canvas size (dropdown with presets + custom inputs)
