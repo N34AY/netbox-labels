@@ -16,6 +16,24 @@ jobs:
       - run: pip install ruff
       - run: ruff check .
 
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e .[docs]
+      - run: mkdocs build --strict
+      - run: rm -f netbox_labels/static/docs/models/netbox_labels/sitemap.xml netbox_labels/static/docs/models/netbox_labels/sitemap.xml.gz
+      - name: Verify committed static/docs matches a fresh build
+        run: |
+          if ! git diff --quiet -- netbox_labels/static/docs; then
+            echo "::error::netbox_labels/static/docs is out of date — run 'mkdocs build --strict' (see CONTRIBUTING.md) and commit the result."
+            git diff --stat -- netbox_labels/static/docs
+            exit 1
+          fi
+
   js-test:
     runs-on: ubuntu-latest
     steps:

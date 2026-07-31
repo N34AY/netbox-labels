@@ -53,6 +53,38 @@ ruff check .
 
 All three run in CI on every push and pull request (`.github/workflows/test.yml`).
 
+## Building the docs
+
+Documentation lives as Markdown under `docs/`, built with [MkDocs](https://www.mkdocs.org/) into
+`netbox_labels/static/docs/models/netbox_labels/` — the static HTML NetBox's own "Model
+Documentation" links point to (see each model's `docs_url`). GitHub renders the Markdown source
+directly, so the same files serve both audiences.
+
+`site_dir` in `mkdocs.yml` is nested under `models/netbox_labels/` (our Django app_label, not just
+`docs/`) deliberately: NetBox core's own docs are *also* collected into `STATIC_ROOT` at bare
+`docs/` (its own `docs/index.html`, `docs/404.html`, `docs/assets/...`), so anything mkdocs writes
+at the site root — not just the model pages — has to stay off that shared path, or collectstatic
+would have two different apps fighting over the same file.
+
+```bash
+pip install -e .[docs]
+mkdocs build --strict
+rm -f netbox_labels/static/docs/models/netbox_labels/sitemap.xml netbox_labels/static/docs/models/netbox_labels/sitemap.xml.gz
+```
+
+(The `rm` isn't optional — mkdocs always regenerates those two with today's date embedded, which
+would otherwise make every rebuild "differ" from what's committed even with no real content
+change; see `mkdocs.yml`.)
+
+The built HTML under `netbox_labels/static/docs/` is committed alongside the Markdown source (so
+`pip install`ing the plugin doesn't require running MkDocs) — after editing anything in `docs/`,
+rebuild and commit both. CI (`docs` job in `.github/workflows/test.yml`) fails if they've drifted
+apart.
+
+Adding a new model that should have its own docs page: add `docs/<model_name>.md` and a matching
+entry under `nav:` in `mkdocs.yml` — `site_dir`/`use_directory_urls` (default: on) then build it
+to exactly the path NetBox's `docs_url` convention expects.
+
 ## Making changes
 
 - Keep PRs focused — one change per PR is easier to review than a bundle of unrelated ones.
