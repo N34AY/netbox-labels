@@ -22,6 +22,11 @@
 	var zoom = 1;
 	var dragState = null; // { id, mode: 'move'|'resize', dir, startX, startY, startXMm, startYMm, startWMm, startHMm }
 
+	// Grid/snap is ephemeral UI state, like zoom — not part of currentState()/
+	// restoreState(), so it isn't tracked by undo/redo and doesn't get saved.
+	var showGrid = false;
+	var gridSizeMm = 5;
+
 	var canvas = document.getElementById('qr-canvas');
 	var canvasWrapper = document.getElementById('qr-canvas-wrapper');
 	var propertiesBody = document.getElementById('qr-properties-body');
@@ -31,6 +36,8 @@
 	var zoomOutBtn = document.getElementById('qr-zoom-out');
 	var zoomResetBtn = document.getElementById('qr-zoom-reset');
 	var zoomLabel = document.getElementById('qr-zoom-label');
+	var gridToggleBtn = document.getElementById('qr-grid-toggle');
+	var gridSizeSelect = document.getElementById('qr-grid-size');
 	var addTextLink = document.getElementById('qr-add-text');
 	var addImageLink = document.getElementById('qr-add-image');
 	var addQrLink = document.getElementById('qr-add-qr');
@@ -71,6 +78,10 @@
 
 	function round1(value) {
 		return Math.round(value * 10) / 10;
+	}
+
+	function snapMm(value) {
+		return Math.round(value / gridSizeMm) * gridSizeMm;
 	}
 
 	function uid(prefix) {
@@ -179,6 +190,21 @@
 	});
 
 	//
+	// Grid / snap
+	//
+
+	gridToggleBtn.addEventListener('click', function () {
+		showGrid = !showGrid;
+		gridToggleBtn.classList.toggle('active', showGrid);
+		renderCanvas();
+	});
+
+	gridSizeSelect.addEventListener('change', function () {
+		gridSizeMm = parseFloat(gridSizeSelect.value) || gridSizeMm;
+		renderCanvas();
+	});
+
+	//
 	// Rendering
 	//
 
@@ -196,6 +222,16 @@
 	function renderCanvas() {
 		canvas.style.width = mmToPx(canvasWidthMm) + 'px';
 		canvas.style.height = mmToPx(canvasHeightMm) + 'px';
+		if (showGrid) {
+			var gridPx = mmToPx(gridSizeMm);
+			canvas.style.backgroundImage = [
+				'linear-gradient(to right, #0002 1px, transparent 1px)',
+				'linear-gradient(to bottom, #0002 1px, transparent 1px)',
+			].join(',');
+			canvas.style.backgroundSize = gridPx + 'px ' + gridPx + 'px';
+		} else {
+			canvas.style.backgroundImage = 'none';
+		}
 		canvas.innerHTML = '';
 
 		elements.forEach(function (el) {
@@ -466,25 +502,26 @@
 		}
 		var dxMm = pxToMm(event.clientX - dragState.startX);
 		var dyMm = pxToMm(event.clientY - dragState.startY);
+		var roundMm = showGrid ? snapMm : round1;
 
 		if (dragState.mode === 'move') {
-			el.x_mm = Math.max(0, round1(dragState.startXMm + dxMm));
-			el.y_mm = Math.max(0, round1(dragState.startYMm + dyMm));
+			el.x_mm = Math.max(0, roundMm(dragState.startXMm + dxMm));
+			el.y_mm = Math.max(0, roundMm(dragState.startYMm + dyMm));
 		} else {
 			var dir = dragState.dir;
 			if (dir.indexOf('e') >= 0) {
-				el.width_mm = Math.max(1, round1(dragState.startWMm + dxMm));
+				el.width_mm = Math.max(1, roundMm(dragState.startWMm + dxMm));
 			}
 			if (dir.indexOf('s') >= 0) {
-				el.height_mm = Math.max(1, round1(dragState.startHMm + dyMm));
+				el.height_mm = Math.max(1, roundMm(dragState.startHMm + dyMm));
 			}
 			if (dir.indexOf('w') >= 0) {
-				el.width_mm = Math.max(1, round1(dragState.startWMm - dxMm));
-				el.x_mm = round1(dragState.startXMm + dxMm);
+				el.width_mm = Math.max(1, roundMm(dragState.startWMm - dxMm));
+				el.x_mm = roundMm(dragState.startXMm + dxMm);
 			}
 			if (dir.indexOf('n') >= 0) {
-				el.height_mm = Math.max(1, round1(dragState.startHMm - dyMm));
-				el.y_mm = round1(dragState.startYMm + dyMm);
+				el.height_mm = Math.max(1, roundMm(dragState.startHMm - dyMm));
+				el.y_mm = roundMm(dragState.startYMm + dyMm);
 			}
 		}
 		renderCanvas();
