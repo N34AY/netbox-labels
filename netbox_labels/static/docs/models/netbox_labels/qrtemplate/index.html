@@ -136,6 +136,46 @@ html, body { width: 40mm; height: 12mm; }</code></pre>
   <tr><td><code>data-correct-level</code></td><td><code>H</code></td><td>Error-correction level (<code>L</code>/<code>M</code>/<code>Q</code>/<code>H</code>). Lower levels need fewer modules for the same data — useful for keeping small physical labels scannable.</td></tr>
 </table>
 
+<h2 id="barcode-formats">Visual designer: barcode formats</h2>
+<p>
+  A <strong>qr</strong> or <strong>barcode</strong> element added in the visual designer has its own
+  <strong>Content</strong> field — the same binding options as a text element (Object name, Object URL,
+  Object type, Static text, Formatted text, Custom Jinja2 expression) — instead of the template-wide
+  <strong>QR code value</strong> field above. Both default to <strong>Object URL</strong>.
+</p>
+<p>
+  Unlike a QR code, a barcode format constrains what it can encode: only <code>CODE128</code> accepts
+  arbitrary text such as a URL. Every other format expects a specific digit count or character set:
+</p>
+<table>
+  <tr><th>Format</th><th>Valid input</th></tr>
+  <tr><td><code>CODE128</code></td><td>Any text.</td></tr>
+  <tr><td><code>EAN13</code></td><td>12 or 13 digits.</td></tr>
+  <tr><td><code>EAN8</code></td><td>7 or 8 digits.</td></tr>
+  <tr><td><code>UPC</code></td><td>11 or 12 digits.</td></tr>
+  <tr><td><code>ITF14</code></td><td>An even number of digits.</td></tr>
+  <tr><td><code>MSI</code></td><td>Digits only.</td></tr>
+  <tr><td><code>pharmacode</code></td><td>A number from 3 to 131070.</td></tr>
+  <tr><td><code>CODE39</code></td><td>Uppercase letters, digits, and <code>-. $/+%</code>.</td></tr>
+  <tr><td><code>codabar</code></td><td>Digits and <code>-$:/.+</code>.</td></tr>
+</table>
+<p>
+  The designer's <strong>Barcode format</strong> dropdown is filtered to match, but only for the two
+  bindings whose value it can actually check up front:
+</p>
+<ul>
+  <li><strong>Object URL</strong> is always a URL, so only <code>CODE128</code> is offered.</li>
+  <li><strong>Static text</strong> is filtered to whatever formats the text you typed actually fits.</li>
+  <li>
+    <strong>Object name</strong>, <strong>Object type</strong>, <strong>Formatted text</strong>, and
+    <strong>Custom Jinja2 expression</strong> resolve to a different value per object, which the designer
+    has no way to check — every format stays selectable, so pick one that matches the data you expect
+    (e.g. a device's serial number against <code>EAN13</code>). A value that doesn't fit the chosen format
+    at render time fails silently: the barcode is left blank and the mismatch is only logged to the
+    browser console, prefixed <code>[NetBoxQR/Barcode]</code>.
+  </li>
+</ul>
+
 <h2>Where templates appear</h2>
 <ul>
   <li>A "QR Codes" panel on the detail page of every object type the template applies to, showing a live preview at the label's true rendered size plus <strong>Print</strong> / <strong>Print via…</strong> buttons.</li>

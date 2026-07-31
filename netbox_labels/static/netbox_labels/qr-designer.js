@@ -16,6 +16,7 @@
 	var canvasHeightMm = parseFloat(root.dataset.heightMm) || 12;
 	var previewUrl = root.dataset.previewUrl;
 	var searchUrl = root.dataset.searchUrl;
+	var docsUrl = root.dataset.docsUrl;
 
 	var elements = JSON.parse(document.getElementById('qr-layout-data').textContent).elements || [];
 	var selectedId = null;
@@ -37,7 +38,8 @@
 	var zoomResetBtn = document.getElementById('qr-zoom-reset');
 	var zoomLabel = document.getElementById('qr-zoom-label');
 	var gridToggleBtn = document.getElementById('qr-grid-toggle');
-	var gridSizeSelect = document.getElementById('qr-grid-size');
+	var gridSizeLabel = document.getElementById('qr-grid-size-label');
+	var gridSizeOptions = document.querySelectorAll('.qr-grid-size-option');
 	var addTextLink = document.getElementById('qr-add-text');
 	var addImageLink = document.getElementById('qr-add-image');
 	var addQrLink = document.getElementById('qr-add-qr');
@@ -237,18 +239,48 @@
 		renderCanvas();
 	});
 
-	gridSizeSelect.addEventListener('change', function () {
-		gridSizeMm = parseFloat(gridSizeSelect.value) || gridSizeMm;
-		renderCanvas();
+	gridSizeOptions.forEach(function (option) {
+		option.addEventListener('click', function (event) {
+			event.preventDefault();
+			gridSizeMm = parseFloat(option.dataset.value) || gridSizeMm;
+			gridSizeLabel.textContent = option.textContent.trim();
+			gridSizeOptions.forEach(function (o) { o.classList.toggle('active', o === option); });
+			renderCanvas();
+		});
 	});
 
 	//
 	// Rendering
 	//
 
+	// A small, instantly-recognizable stand-in for a real qr/barcode element
+	// in the canvas mockup — reuses the same vendored MDI glyphs already
+	// shown for these types in the toolbar's Add menu (mdi-qrcode/
+	// mdi-barcode), rather than plain "QR"/"CODE128" text, so it actually
+	// looks like a (fake) code rather than a text label. window.MDI_ICONS
+	// comes from mdi-icons-data.js, loaded before this file in
+	// qrtemplate_design.html; absent in the JS test fixture, which doesn't
+	// need real icon rendering, hence the empty-string fallback.
+	function placeholderIconSvg(slug, color) {
+		var path = (window.MDI_ICONS || {})[slug];
+		if (!path) {
+			return '';
+		}
+		// Percentage-only sizing: the element's own box is already in
+		// zoomed pixels (mmToPx() bakes the current zoom level in), so a
+		// fixed rem/px cap here would stay the same size as the canvas is
+		// zoomed in/out instead of scaling proportionally with it.
+		return (
+			'<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" ' +
+			'style="width:60%;height:60%;flex:none">' +
+			'<path fill="' + color + '" d="' + path + '"/></svg>'
+		);
+	}
+
 	function previewText(el) {
 		switch (el.binding) {
 			case 'static': return el.text || _('(empty)');
+			case 'object_url': return '{{ object_url }}';
 			case 'object_type': return '{{ object_type.model }}';
 			case 'custom': return '{{ ' + (el.expr || '') + ' }}';
 			case 'format': return el.format || _('(empty)');
@@ -298,13 +330,34 @@
 			content.style.cssText = [
 				'width:100%', 'height:100%', 'overflow:hidden',
 				'display:flex', 'align-items:center', 'font-size:11px',
-				'background:' + ((el.type === 'qr' || el.type === 'barcode') ? 'repeating-linear-gradient(45deg,#eee,#eee 4px,#fff 4px,#fff 8px)' : el.type === 'image' && !el.src ? '#eee' : 'transparent'),
+				// The canvas itself is always a fixed white background (it's
+				// mocking up a physical label, regardless of NetBox's own
+				// light/dark theme) — an explicit color keeps this readable
+				// either way, rather than inheriting NetBox's own (often
+				// near-white, on dark mode) body text color and nearly
+				// vanishing against the white. text/barcode/qr elements'
+				// own color is used where there is one; image has no such
+				// property, so it gets a plain neutral placeholder color.
+				'color:' + (el.type === 'image' ? '#555' : (el.color || '#000000')),
+				'background:' + ((el.type === 'qr' || el.type === 'barcode') ? '#f8f9fa' : el.type === 'image' && !el.src ? '#eee' : 'transparent'),
+				// Text sitting flush against the box's left edge is hard to
+				// tell apart from the border itself — a small inset here is
+				// purely an editor legibility nicety (the real render, via
+				// _render_text_element, is unpadded, matching the exact box
+				// the admin drew).
+				el.type === 'text' ? 'padding-left:3px' : '',
 			].join(';');
 
 			if (el.type === 'qr') {
-				content.textContent = 'QR';
+				content.style.justifyContent = 'center';
+				content.innerHTML = placeholderIconSvg('qrcode', el.color || '#555');
 			} else if (el.type === 'barcode') {
-				content.textContent = '▮▮▮ ' + (el.barcode_format || 'CODE128');
+				content.style.justifyContent = 'center';
+				content.innerHTML = placeholderIconSvg('barcode', el.color || '#555');
+				var formatLabel = document.createElement('span');
+				formatLabel.style.cssText = 'margin-left:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+				formatLabel.textContent = el.barcode_format || 'CODE128';
+				content.appendChild(formatLabel);
 			} else if (el.type === 'image') {
 				if (el.src) {
 					var img = document.createElement('img');
@@ -388,6 +441,61 @@
 			(hint ? '<div class="form-text small">' + hint + '</div>' : '') + '</div>';
 	}
 
+	// A link icon appended to a field's label, opening docsUrl (the plugin's
+	// static model docs page — see qrtemplate_design.html's data-docs-url,
+	// empty when DOCS_ROOT is disabled) at the given anchor in a new tab.
+	function docsIcon(anchor) {
+		if (!docsUrl) {
+			return '';
+		}
+		return (
+			' <a href="' + docsUrl + '#' + anchor + '" target="_blank" rel="noopener" title="' +
+			_('Documentation') + '"><i class="mdi mdi-information-outline"></i></a>'
+		);
+	}
+
+	var BARCODE_FORMATS = [
+		['CODE128', 'CODE128'], ['EAN13', 'EAN13'], ['EAN8', 'EAN8'], ['UPC', 'UPC'],
+		['CODE39', 'CODE39'], ['ITF14', 'ITF14'], ['MSI', 'MSI'],
+		['pharmacode', 'pharmacode'], ['codabar', 'codabar'],
+	];
+
+	// Whether a literal value is valid input for a barcode format other than
+	// CODE128 (which accepts any text and is never checked against this).
+	var BARCODE_FORMAT_VALIDATORS = {
+		EAN13: function (v) { return /^\d{12,13}$/.test(v); },
+		EAN8: function (v) { return /^\d{7,8}$/.test(v); },
+		UPC: function (v) { return /^\d{11,12}$/.test(v); },
+		CODE39: function (v) { return /^[A-Z0-9\-. $/+%]+$/.test(v); },
+		ITF14: function (v) { return /^\d+$/.test(v) && v.length % 2 === 0; },
+		MSI: function (v) { return /^\d+$/.test(v); },
+		pharmacode: function (v) { return /^\d+$/.test(v) && +v >= 3 && +v <= 131070; },
+		codabar: function (v) { return /^[0-9\-$:/.+]+$/.test(v); },
+	};
+
+	// Which barcode formats make sense for a barcode element's current
+	// Content binding — see the "Visual designer: barcode formats" section
+	// of the plugin's docs (docsIcon('barcode-formats') below) for the
+	// reasoning. Only "object_url" (always a URL) and "static" (the literal
+	// value is known up front) can actually be checked here; every other
+	// binding resolves to a different value per object, which the designer
+	// has no real object to test against, so nothing is filtered for those.
+	function allowedBarcodeFormats(el) {
+		if (el.binding === 'object_url') {
+			return ['CODE128'];
+		}
+		if (el.binding === 'static') {
+			var text = (el.text || '').trim();
+			if (!text) {
+				return BARCODE_FORMATS.map(function (pair) { return pair[0]; });
+			}
+			return BARCODE_FORMATS.map(function (pair) { return pair[0]; }).filter(function (format) {
+				return format === 'CODE128' || BARCODE_FORMAT_VALIDATORS[format](text);
+			});
+		}
+		return BARCODE_FORMATS.map(function (pair) { return pair[0]; });
+	}
+
 	function numberInput(prop, value) {
 		return '<input type="number" step="0.1" class="form-control form-control-sm" data-prop="' + prop + '" value="' + value + '">';
 	}
@@ -425,12 +533,7 @@
 		rows.push(field(_('Width (mm)'), numberInput('width_mm', el.width_mm)));
 		rows.push(field(_('Height (mm)'), numberInput('height_mm', el.height_mm)));
 
-		if (el.type === 'qr') {
-			rows.push(field(_('Error correction'), selectInput('correct_level', el.correct_level || 'H', [
-				['L', 'L (' + _('least redundant, smallest modules') + ')'],
-				['M', 'M'], ['Q', 'Q'], ['H', 'H (' + _('most redundant') + ')'],
-			])));
-		} else if (el.type === 'image') {
+		if (el.type === 'image') {
 			if (el.src) {
 				rows.push('<div class="mb-2"><img src="' + el.src + '" style="max-width:100%;max-height:80px;border:1px solid #ccc"></div>');
 			}
@@ -441,13 +544,19 @@
 			if (el._icon_name) {
 				rows.push(field(_('Recolor icon'), colorInput('_icon_color', el._icon_color || '#000000')));
 			}
-		} else if (el.type === 'text' || el.type === 'barcode') {
-			// Text and barcode elements share the same "what data to encode"
-			// binding UI — text renders it as a styled string, barcode as
-			// scanlines — see text_content() in layout.py, which both
-			// renderers call identically.
-			rows.push(field(_('Content'), selectInput('binding', el.binding || 'object', [
-				['object', _('Object (works for every type)')],
+		} else if (el.type === 'text' || el.type === 'barcode' || el.type === 'qr') {
+			// Text, barcode and qr elements share the same "what data to
+			// encode" binding UI — text renders it as a styled string,
+			// barcode as scanlines, qr as a scannable code — see
+			// text_content() in layout.py, which all three renderers call
+			// identically. A qr element with no "binding" of its own yet
+			// (only ever true of elements saved before this UI existed)
+			// still falls back to the template-wide QR code value field, so
+			// its default here is shown as "Object URL" to match that.
+			var defaultBinding = el.type === 'qr' ? 'object_url' : 'object';
+			rows.push(field(_('Content'), selectInput('binding', el.binding || defaultBinding, [
+				['object', _('Object name')],
+				['object_url', _('Object URL')],
 				['object_type', _('Object type')],
 				['static', _('Static text')],
 				['format', _('Formatted text')],
@@ -466,10 +575,25 @@
 				rows.push(field(_('Expression'), textInput('expr', el.expr || ''), 'e.g. object.status, object.rack.name'));
 			}
 			if (el.type === 'barcode') {
-				rows.push(field(_('Barcode format'), selectInput('barcode_format', el.barcode_format || 'CODE128', [
-					['CODE128', 'CODE128'], ['EAN13', 'EAN13'], ['EAN8', 'EAN8'], ['UPC', 'UPC'],
-					['CODE39', 'CODE39'], ['ITF14', 'ITF14'], ['MSI', 'MSI'],
-					['pharmacode', 'pharmacode'], ['codabar', 'codabar'],
+				var allowedFormats = allowedBarcodeFormats(el);
+				if (allowedFormats.indexOf(el.barcode_format || 'CODE128') === -1) {
+					// The Content binding just changed to something the
+					// currently-picked format can't hold (e.g. switching to
+					// Object URL while EAN13 was selected) — CODE128 accepts
+					// anything, so it's always a safe format to fall back to.
+					el.barcode_format = 'CODE128';
+				}
+				rows.push(field(
+					_('Barcode format') + docsIcon('barcode-formats'),
+					selectInput('barcode_format', el.barcode_format || 'CODE128', BARCODE_FORMATS.filter(function (pair) {
+						return allowedFormats.indexOf(pair[0]) !== -1;
+					}))
+				));
+				rows.push(field(_('Color'), colorInput('color', el.color || '#000000')));
+			} else if (el.type === 'qr') {
+				rows.push(field(_('Error correction'), selectInput('correct_level', el.correct_level || 'H', [
+					['L', 'L (' + _('least redundant, smallest modules') + ')'],
+					['M', 'M'], ['Q', 'Q'], ['H', 'H (' + _('most redundant') + ')'],
 				])));
 				rows.push(field(_('Color'), colorInput('color', el.color || '#000000')));
 			} else {
@@ -492,8 +616,8 @@
 		propertiesBody.innerHTML = rows.join('');
 
 		propertiesBody.querySelectorAll('[data-prop]').forEach(function (input) {
+			var prop = input.dataset.prop;
 			input.addEventListener('input', function () {
-				var prop = input.dataset.prop;
 				var value = input.type === 'number' ? (parseFloat(input.value) || 0) : input.value;
 				el[prop] = value;
 				if (prop === '_icon_color') {
@@ -504,7 +628,16 @@
 					renderProperties();
 				}
 			});
-			input.addEventListener('change', snapshot);
+			input.addEventListener('change', function () {
+				if (el.type === 'barcode' && prop === 'text') {
+					// The static text's own value only affects which barcode
+					// formats fit it once the admin is done typing — refresh
+					// the (possibly now-different) filtered format list here
+					// rather than on every keystroke.
+					renderProperties();
+				}
+				snapshot();
+			});
 		});
 
 		document.getElementById('qr-delete-element').addEventListener('click', function () {
@@ -666,7 +799,7 @@
 		var el = {
 			id: uid('qr'), type: 'qr',
 			x_mm: 1, y_mm: 1, width_mm: size, height_mm: size,
-			correct_level: 'L',
+			correct_level: 'L', binding: 'object_url', color: '#000000',
 		};
 		elements.push(el);
 		selectElement(el.id);
@@ -678,7 +811,7 @@
 		var el = {
 			id: uid('barcode'), type: 'barcode',
 			x_mm: 1, y_mm: 1, width_mm: Math.max(10, canvasWidthMm - 2), height_mm: Math.max(5, canvasHeightMm / 2),
-			barcode_format: 'CODE128', binding: 'object', color: '#000000',
+			barcode_format: 'CODE128', binding: 'object_url', color: '#000000',
 		};
 		elements.push(el);
 		selectElement(el.id);
@@ -820,6 +953,54 @@
 	// already-displayed result.
 	var previewRequestId = 0;
 
+	// The server-side error (a Jinja2 binding failure — see
+	// sanitize_layout_for_context() in rendering.py) is known as soon as the
+	// preview HTML is fetched. A barcode/QR value the drawing library itself
+	// rejects (see barcode-render.js/qr-render.js) is only known once the
+	// iframe has actually executed those scripts, which happens later, via
+	// postMessage — so the two are tracked separately and merged into the
+	// same display whenever either one changes.
+	var currentServerError = '';
+	var currentClientErrors = [];
+
+	function updatePreviewErrorDisplay() {
+		var lines = [];
+		if (currentServerError) {
+			lines.push(currentServerError);
+		}
+		lines = lines.concat(currentClientErrors);
+		var hasError = lines.length > 0;
+		previewErrorEl.classList.toggle('d-none', !hasError);
+		previewDataToggle.classList.toggle('text-danger', hasError);
+		previewErrorEl.textContent = lines.join('\n\n');
+		// An error needs the user's attention immediately rather than
+		// staying hidden behind a click — expand the collapse directly via
+		// its classes (matching what Bootstrap's own JS would leave it in)
+		// rather than going through bootstrap.Collapse, which isn't exposed
+		// as a global in this NetBox build.
+		if (hasError) {
+			previewDataCollapseEl.classList.add('show');
+			previewDataToggle.setAttribute('aria-expanded', 'true');
+			previewDataToggle.classList.remove('collapsed');
+		}
+	}
+
+	// A malformed barcode/QR value's error arrives asynchronously, well after
+	// this preview's own showPreviewResult() call has already run — so a
+	// stale message from a since-superseded preview (the user switched
+	// object/mode again before the old iframe's scripts finished) could in
+	// principle still land here. Left unguarded: worth revisiting if that
+	// turns out to happen in practice, but the iframe is fully replaced
+	// (srcdoc reassignment) on every new preview, which stops the old one's
+	// scripts running in every browser this has been tested against.
+	window.addEventListener('message', function (event) {
+		if (!event.data || event.data.type !== 'netbox-qr-client-error') {
+			return;
+		}
+		currentClientErrors = currentClientErrors.concat(event.data.errors);
+		updatePreviewErrorDisplay();
+	});
+
 	function renderPreview(contentTypeId, objectId) {
 		var requestId = ++previewRequestId;
 		var formData = new FormData();
@@ -856,15 +1037,12 @@
 			previewDataWrapper.classList.add('d-none');
 			return;
 		}
+		currentClientErrors = [];
 		var doc = new DOMParser().parseFromString(html, 'text/html');
 
 		var errorEl = doc.getElementById('netbox-qr-render-error');
-		var hasError = !!errorEl;
-		previewErrorEl.classList.toggle('d-none', !hasError);
-		previewDataToggle.classList.toggle('text-danger', hasError);
-		if (hasError) {
-			previewErrorEl.textContent = JSON.parse(errorEl.textContent);
-		}
+		currentServerError = errorEl ? JSON.parse(errorEl.textContent) : '';
+		updatePreviewErrorDisplay();
 
 		try {
 			var dataEl = doc.getElementById('netbox-qr-object-data');
@@ -875,17 +1053,6 @@
 		}
 
 		previewDataWrapper.classList.remove('d-none');
-
-		// An error needs the user's attention immediately rather than
-		// staying hidden behind a click — expand the collapse directly via
-		// its classes (matching what Bootstrap's own JS would leave it in)
-		// rather than going through bootstrap.Collapse, which isn't exposed
-		// as a global in this NetBox build.
-		if (hasError) {
-			previewDataCollapseEl.classList.add('show');
-			previewDataToggle.setAttribute('aria-expanded', 'true');
-			previewDataToggle.classList.remove('collapsed');
-		}
 	}
 
 	function setPreviewMode(mode) {

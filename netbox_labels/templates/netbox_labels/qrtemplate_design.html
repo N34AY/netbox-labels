@@ -41,6 +41,7 @@
   data-height-mm="{{ object.height_mm }}"
   data-preview-url="{% url 'plugins:netbox_labels:qrtemplate_preview' object.pk %}"
   data-search-url="{% url 'plugins:netbox_labels:qrtemplate_object_search' %}"
+  data-docs-url="{% if settings.DOCS_ROOT %}{% static 'docs/models/netbox_labels/qrtemplate/' %}{% endif %}"
 >
   <div class="d-flex flex-wrap gap-1 align-items-center mb-3" id="qr-toolbar">
     <div class="btn-group">
@@ -65,29 +66,18 @@
     </div>
 
     <div class="btn-group">
-      <button type="button" id="qr-grid-toggle" class="btn btn-sm btn-outline-secondary" title="{% trans 'Toggle grid / snap' %}">
+      <button type="button" id="qr-grid-toggle" class="btn btn-sm btn-outline-primary" title="{% trans 'Toggle grid / snap' %}">
         <i class="mdi mdi-grid"></i>
       </button>
-      <select id="qr-grid-size" class="form-select form-select-sm" title="{% trans 'Grid size' %}" style="max-width: 5.5rem;">
-        <option value="1">1 mm</option>
-        <option value="2">2 mm</option>
-        <option value="5" selected>5 mm</option>
-        <option value="10">10 mm</option>
-      </select>
-    </div>
-
-    <div class="dropdown">
-      <button type="button" class="btn btn-sm btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown">
-        <i class="mdi mdi-plus-thick"></i> {% trans "Add" %}
+      <button type="button" id="qr-grid-size-btn" class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" title="{% trans 'Grid size' %}">
+        <span id="qr-grid-size-label">5 mm</span>
       </button>
       <ul class="dropdown-menu">
-        <li><a class="dropdown-item" href="#" id="qr-add-text"><i class="mdi mdi-format-text"></i> {% trans "Text" %}</a></li>
-        <li><a class="dropdown-item" href="#" id="qr-add-image"><i class="mdi mdi-image"></i> {% trans "Image" %}</a></li>
-        <li><a class="dropdown-item" href="#" id="qr-add-qr"><i class="mdi mdi-qrcode"></i> {% trans "QR Code" %}</a></li>
-        <li><a class="dropdown-item" href="#" id="qr-add-barcode"><i class="mdi mdi-barcode"></i> {% trans "Barcode" %}</a></li>
-        <li><a class="dropdown-item" href="#" id="qr-add-icon" data-bs-toggle="modal" data-bs-target="#qr-icon-picker-modal"><i class="mdi mdi-shape"></i> {% trans "Icon" %}</a></li>
+        <li><a class="dropdown-item qr-grid-size-option" href="#" data-value="1">1 mm</a></li>
+        <li><a class="dropdown-item qr-grid-size-option" href="#" data-value="2">2 mm</a></li>
+        <li><a class="dropdown-item qr-grid-size-option active" href="#" data-value="5">5 mm</a></li>
+        <li><a class="dropdown-item qr-grid-size-option" href="#" data-value="10">10 mm</a></li>
       </ul>
-      <input type="file" id="qr-image-file-input" accept="image/*" class="d-none">
     </div>
 
     <div class="dropdown">
@@ -112,6 +102,20 @@
           <i class="mdi mdi-pencil"></i> {% trans "Manage presets…" %}
         </a>
       </div>
+    </div>
+
+    <div class="dropdown">
+      <button type="button" class="btn btn-sm btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown">
+        <i class="mdi mdi-plus-thick"></i> {% trans "Add" %}
+      </button>
+      <ul class="dropdown-menu">
+        <li><a class="dropdown-item" href="#" id="qr-add-text"><i class="mdi mdi-format-text"></i> {% trans "Text" %}</a></li>
+        <li><a class="dropdown-item" href="#" id="qr-add-image"><i class="mdi mdi-image"></i> {% trans "Image" %}</a></li>
+        <li><a class="dropdown-item" href="#" id="qr-add-qr"><i class="mdi mdi-qrcode"></i> {% trans "QR Code" %}</a></li>
+        <li><a class="dropdown-item" href="#" id="qr-add-barcode"><i class="mdi mdi-barcode"></i> {% trans "Barcode" %}</a></li>
+        <li><a class="dropdown-item" href="#" id="qr-add-icon" data-bs-toggle="modal" data-bs-target="#qr-icon-picker-modal"><i class="mdi mdi-shape"></i> {% trans "Icon" %}</a></li>
+      </ul>
+      <input type="file" id="qr-image-file-input" accept="image/*" class="d-none">
     </div>
 
     <div class="ms-auto btn-group">

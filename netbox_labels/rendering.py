@@ -78,14 +78,16 @@ def render_placeholder(qr_template, request):
 
 
 def sanitize_layout_for_context(layout, context):
-    """Test-renders every "custom"/"format" text element's own Jinja2
+    """Test-renders every "custom"/"format" text/barcode/qr element's own Jinja2
     fragment against the given context, and — in a deep copy of layout —
-    blanks out (falls back to empty static text) any element whose fragment
-    raises, rather than letting the *entire* label fail to render (and thus
-    disappear completely from the preview) over one broken binding.
+    falls back any element whose fragment raises to a static display of its
+    own raw expression/format string (recolored red for text/barcode, which
+    have a color to change), rather than letting the *entire* label fail to
+    render (and thus disappear completely from the preview) over one broken
+    binding.
 
     Returns (sanitized_layout, errors), where errors is a list of
-    (element_id, message) pairs for whichever elements were blanked.
+    (element_id, message) pairs for whichever elements were rewritten.
 
     This does mean a successful "custom"/"format" fragment gets rendered
     twice per call — once here, standalone, and again as part of the full
@@ -107,7 +109,7 @@ def sanitize_layout_for_context(layout, context):
     sanitized = copy.deepcopy(layout)
     errors = []
     for element in sanitized.get('elements', []):
-        if element.get('type') not in ('text', 'barcode') or element.get('binding') not in ('custom', 'format'):
+        if element.get('type') not in ('text', 'barcode', 'qr') or element.get('binding') not in ('custom', 'format'):
             continue
         fragment = text_content(element)
         if not fragment:
@@ -116,6 +118,15 @@ def sanitize_layout_for_context(layout, context):
             render_jinja2(fragment, context, environment_params=_HTML_ENV_PARAMS)
         except Exception as e:
             errors.append((element.get('id', '?'), f'{e.__class__.__name__}: {e}'))
+            # Falls back to showing the admin-authored expression/format
+            # string itself (as plain static text — see text_content()'s
+            # 'static' case, which escapes it like any other static text)
+            # rather than going blank, so the broken element is still
+            # visible on the label itself, not just in the preview's error
+            # panel. Recolored red so it's obviously not the real content.
+            raw_source = element.get('expr' if element.get('binding') == 'custom' else 'format', '')
             element['binding'] = 'static'
-            element['text'] = ''
+            element['text'] = raw_source
+            if element.get('type') in ('text', 'barcode'):
+                element['color'] = '#dc3545'
     return sanitized, errors
