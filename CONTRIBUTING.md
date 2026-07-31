@@ -55,10 +55,13 @@ All three run in CI on every push and pull request (`.github/workflows/test.yml`
 
 ## Building the docs
 
-Documentation lives as Markdown under `docs/`, built with [MkDocs](https://www.mkdocs.org/) into
+Documentation lives as Markdown under `docs/`, serving three audiences from the one source:
+GitHub renders it directly; [MkDocs](https://www.mkdocs.org/) builds it into
 `netbox_labels/static/docs/models/netbox_labels/` — the static HTML NetBox's own "Model
-Documentation" links point to (see each model's `docs_url`). GitHub renders the Markdown source
-directly, so the same files serve both audiences.
+Documentation" links point to (see each model's `docs_url`); and a separate build
+(`mkdocs-pages.yml`) deploys it live to https://n34ay.github.io/netbox-labels/ via
+`.github/workflows/docs-pages.yml`, automatically on every push to `main` that touches `docs/` —
+nothing to build or commit for that one, unlike the NetBox-embedded copy below.
 
 `site_dir` in `mkdocs.yml` is nested under `models/netbox_labels/` (our Django app_label, not just
 `docs/`) deliberately: NetBox core's own docs are *also* collected into `STATIC_ROOT` at bare
