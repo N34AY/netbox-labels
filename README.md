@@ -10,6 +10,8 @@ both direct label printers and regular printers.
 
 - **Repository:** https://github.com/N34AY/netbox-labels
 - **Issues / bug reports / feature requests:** https://github.com/N34AY/netbox-labels/issues
+- **Docs:** [docs/](docs/) here on GitHub, or the "Model Documentation" link on a QR Template's
+  or QR Size Preset's page in a running NetBox instance
 
 ## Features
 

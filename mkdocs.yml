@@ -1,0 +1,62 @@
+site_name: NetBox Labels
+site_description: QR code label templates for NetBox objects
+site_url: https://github.com/N34AY/netbox-labels
+# NetBox core's own docs are ALSO collected into STATIC_ROOT at bare
+# "docs/" (see its mkdocs.yml: site_dir: netbox/project-static/docs), with
+# its own docs/index.html, docs/404.html, docs/assets/... at that same
+# shared root. Nesting our site_dir under docs/models/netbox_labels/ (our
+# Django app_label, guaranteed unique among installed apps) keeps every file
+# mkdocs writes — including its own homepage/404/theme assets, not just the
+# model pages — off that shared "docs/" root entirely, so nothing here can
+# collide with core's docs (or another plugin's) during collectstatic.
+# Each model's docs_url (see NetBoxModel) defaults to
+# /static/docs/models/<app_label>/<model_name>/ — combined with
+# use_directory_urls (default: true, page.md -> page/index.html), qrtemplate.md
+# below still builds to exactly the path NetBox itself expects.
+site_dir: netbox_labels/static/docs/models/netbox_labels
+repo_name: netbox-labels
+repo_url: https://github.com/N34AY/netbox-labels
+
+theme:
+  name: material
+  icon:
+    repo: fontawesome/brands/github
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/lightbulb-outline
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/lightbulb
+        name: Switch to light mode
+  features:
+    - content.code.copy
+    - navigation.footer
+
+nav:
+  - Home: index.md
+  - QR Template: qrtemplate.md
+  - QR Size Preset: qrsizepreset.md
+
+# The search plugin's assets (a lunr stemmer bundle per language, regardless
+# of which one is actually configured) cost ~2MB for what's a handful of
+# pages shipped inside the plugin's own PyPI package (see pyproject.toml's
+# package-data) — not worth it here, so search is disabled by specifying an
+# empty plugin list instead of leaving it to mkdocs' implicit default (which
+# enables search automatically when "plugins" is unset).
+plugins: []
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - tables
+  - pymdownx.superfences
+
+# mkdocs always writes sitemap.xml/.gz regardless of plugins/site_url, and
+# both embed the build date — meaningless for docs shipped inside a Python
+# package rather than served from a real crawled domain, and it'd make the
+# committed output un-reproducible day to day. Delete both after building
+# (see CONTRIBUTING.md's docs-building instructions and the "docs" CI job).

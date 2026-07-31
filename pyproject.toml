@@ -29,6 +29,10 @@ Issues = "https://github.com/N34AY/netbox-labels/issues"
 
 [project.optional-dependencies]
 dev = ["ruff"]
+# Builds docs/*.md into netbox_labels/static/docs/models/netbox_labels/ (see
+# mkdocs.yml) — the static HTML NetBox's own "Model Documentation" links
+# point to. Not needed to install/run the plugin, only to work on its docs.
+docs = ["mkdocs-material"]
 
 [tool.setuptools.packages.find]
 include = ["netbox_labels*"]
