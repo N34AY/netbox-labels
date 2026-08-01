@@ -1,12 +1,11 @@
 from django.utils.translation import gettext_lazy as _
-from netbox.choices import ButtonColorChoices
 from netbox.plugins import PluginMenu, PluginMenuButton, PluginMenuItem
 
 menu = PluginMenu(
-    label=_('QR Codes'),
-    icon_class='mdi mdi-qrcode',
+    label=_('Labels'),
+    icon_class='mdi mdi-label-outline',
     groups=(
-        (_('QR Codes'), (
+        (_('Labels'), (
             PluginMenuItem(
                 link='plugins:netbox_labels:qrtemplate_list',
                 link_text=_('Templates'),
@@ -16,7 +15,6 @@ menu = PluginMenu(
                         link='plugins:netbox_labels:qrtemplate_add',
                         title=_('Add'),
                         icon_class='mdi mdi-plus-thick',
-                        color=ButtonColorChoices.GREEN,
                         permissions=['netbox_labels.add_qrtemplate'],
                     ),
                 ),
@@ -37,7 +35,6 @@ menu = PluginMenu(
                         link='plugins:netbox_labels:qrsizepreset_add',
                         title=_('Add'),
                         icon_class='mdi mdi-plus-thick',
-                        color=ButtonColorChoices.GREEN,
                         permissions=['netbox_labels.add_qrsizepreset'],
                     ),
                 ),

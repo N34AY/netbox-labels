@@ -27,7 +27,7 @@
     
     
       
-        <title>QR Template - NetBox Labels</title>
+        <title>Label Template - NetBox Labels</title>
       
     
     
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#qr-template" class="md-skip">
+        <a href="#label-template" class="md-skip">
           Skip to content
         </a>
       
@@ -114,7 +114,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              QR Template
+              Label Template
             
           </span>
         </div>
@@ -263,7 +263,7 @@
   <span class="md-ellipsis">
     
   
-    QR Template
+    Label Template
   
 
     
@@ -281,7 +281,7 @@
   <span class="md-ellipsis">
     
   
-    QR Template
+    Label Template
   
 
     
@@ -456,6 +456,45 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#visual-designer-content-bindings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Visual designer: content bindings
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Visual designer: content bindings">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#object-vs-object_data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        object vs. object_data
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#when-an-expression-doesnt-resolve" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When an expression doesn't resolve
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#visual-designer-barcode-formats" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -521,7 +560,7 @@
   <span class="md-ellipsis">
     
   
-    QR Size Preset
+    Label Size Preset
   
 
     
@@ -710,6 +749,45 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#visual-designer-content-bindings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Visual designer: content bindings
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Visual designer: content bindings">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#object-vs-object_data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        object vs. object_data
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#when-an-expression-doesnt-resolve" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When an expression doesn't resolve
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#visual-designer-barcode-formats" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -773,11 +851,11 @@
   
 
 
-<h1 id="qr-template">QR Template</h1>
+<h1 id="label-template">Label Template</h1>
 <p>Part of the <a href="https://github.com/N34AY/netbox-labels">NetBox Labels</a> plugin.</p>
-<p>A <strong>QR Template</strong> defines an HTML/CSS/JS label — plus a Jinja2 expression for what the QR code
+<p>A <strong>Label Template</strong> defines an HTML/CSS/JS label — plus a Jinja2 expression for what the QR code
 itself encodes — for one or more NetBox object types. Once a template is created, NetBox shows a
-"QR Codes" panel on the detail page of every object it applies to, letting you preview, print via
+"Labels" panel on the detail page of every object it applies to, letting you preview, print via
 the browser, or print directly to a label printer — Niimbot, Zebra, or any generic ESC/POS
 printer — over Bluetooth or USB.</p>
 <h2 id="fields">Fields</h2>
@@ -898,11 +976,86 @@ attributes on that element:</p>
 </tr>
 </tbody>
 </table>
+<h2 id="visual-designer-content-bindings">Visual designer: content bindings</h2>
+<p>Every element the visual designer can add — text, barcode, and qr — has a <strong>Content</strong> field
+controlling what data it shows or encodes:</p>
+<table>
+<thead>
+<tr>
+<th>Binding</th>
+<th>Renders</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Object name</td>
+<td><code>{{ object }}</code> — the object's display string.</td>
+</tr>
+<tr>
+<td>Object URL</td>
+<td><code>{{ object_url }}</code> — its absolute NetBox detail page URL.</td>
+</tr>
+<tr>
+<td>Object type</td>
+<td><code>{{ object_type.model }}</code>, e.g. <code>"device"</code>.</td>
+</tr>
+<tr>
+<td>Static text</td>
+<td>Whatever you typed, unchanged.</td>
+</tr>
+<tr>
+<td>Formatted text</td>
+<td>Literal text with <code>${expr}</code> placeholders mixed in — see below.</td>
+</tr>
+<tr>
+<td>Custom Jinja2 expression</td>
+<td>A single expression, e.g. <code>object_data.status.label</code>.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>qr</strong> and <strong>barcode</strong> elements default to Object URL instead of Object name (a scannable code
+encoding a device's bare name isn't very useful); otherwise all three element types share this
+same list and behave identically for it.</p>
+<h3 id="object-vs-object_data"><code>object</code> vs. <code>object_data</code></h3>
+<p>Both <strong>Formatted text</strong> and <strong>Custom Jinja2 expression</strong> can reference either variable, and it's
+easy to reach for the wrong one:</p>
+<ul>
+<li><code>object</code> is the actual Django model instance. Plain fields work fine (<code>object.name</code>), but a
+  choice field (like a cable's <code>profile</code>) returns its bare stored value as a string — <code>.label</code> on
+  that raises, since a string has no such attribute. Related-object chains (like
+  <code>object.a_terminations[0].device</code>) work <em>only</em> when the relation is actually populated for this
+  object; an empty or missing one raises too, since indexing/attribute access on Undefined always
+  does in Jinja2.</li>
+<li><code>object_data</code> is the same object serialized the way NetBox's own REST API would return it — the
+  same shape you see under <strong>Object data (debug)</strong> in the Preview panel. Choice fields come back
+  as <code>{"value": ..., "label": ...}</code> here, so <code>object_data.profile.label</code> gets you the human-readable
+  label a raw <code>object.profile.label</code> can't.</li>
+</ul>
+<p>When in doubt, click <strong>Object data (debug)</strong> in the Preview panel for the object you're testing
+against and match its exact shape.</p>
+<h3 id="when-an-expression-doesnt-resolve">When an expression doesn't resolve</h3>
+<p>Two different placeholder-style fallbacks can show up, and they look different on purpose:</p>
+<ul>
+<li>A <strong>whole expression</strong> that raises when evaluated (mismatched relations, bad syntax, indexing
+  into something empty) falls back to showing its own <code>${...}</code> source verbatim, so the element
+  stays visible instead of disappearing — recolored red once confirmed against a real object in
+  the Preview panel's "Real object" tab, but never in "Placeholder" mode, where an object this bare
+  can make plenty of otherwise-fine expressions look broken (see below).</li>
+<li>A <strong>single placeholder</strong> inside Formatted text that resolves cleanly to "nothing defined" (a
+  missing attribute, not an exception) falls back independently to just that placeholder's bare
+  expression text, without the <code>${}</code> — literal text around it, and any other placeholder in the
+  same string, still render normally.</li>
+</ul>
+<p>The <strong>Preview</strong> panel's "Placeholder" tab tests every expression against a bare mock object with
+no fields of its own at all — useful for catching outright broken Jinja2 syntax early, but it
+<em>will</em> flag expressions that are only ever one level deep in trouble here (e.g. anything chained
+off a relation, like the <code>a_terminations</code> example above) purely because the mock object can't
+satisfy them, not because they're actually wrong. Switch to "Real object" and pick an actual
+object to confirm before assuming red text means something needs fixing.</p>
 <h2 id="visual-designer-barcode-formats">Visual designer: barcode formats</h2>
-<p>A <strong>qr</strong> or <strong>barcode</strong> element added in the visual designer has its own <strong>Content</strong> field — the
-same binding options as a text element (Object name, Object URL, Object type, Static text,
-Formatted text, Custom Jinja2 expression) — instead of the template-wide <strong>QR code value</strong> field
-above. Both default to <strong>Object URL</strong>.</p>
+<p>A <strong>qr</strong> or <strong>barcode</strong> element's own <strong>Content</strong> field above works the same way as a text
+element's — instead of the template-wide <strong>QR code value</strong> field above. Both default to
+<strong>Object URL</strong>.</p>
 <p>Unlike a QR code, a barcode format constrains what it can encode: only <code>CODE128</code> accepts
 arbitrary text such as a URL. Every other format expects a specific digit count or character set:</p>
 <table>
@@ -965,13 +1118,13 @@ whose value it can actually check up front:</p>
 </ul>
 <h2 id="where-templates-appear">Where templates appear</h2>
 <ul>
-<li>A "QR Codes" panel on the detail page of every object type the template applies to, showing a
+<li>A "Labels" panel on the detail page of every object type the template applies to, showing a
   live preview at the label's true rendered size plus <strong>Print</strong> / <strong>Print via…</strong> buttons.</li>
 <li>A standalone render page at
   <code>/plugins/labels/render/&lt;content_type_id&gt;/&lt;object_id&gt;/&lt;template_id&gt;/</code>.</li>
 </ul>
 <h2 id="printing-to-a-label-printer">Printing to a label printer</h2>
-<p>The <strong>Print via…</strong> button (hidden if disabled under <strong>QR Codes → Settings</strong> in your NetBox
+<p>The <strong>Print via…</strong> button (hidden if disabled under <strong>Labels → Settings</strong> in your NetBox
 instance's sidebar) opens a small picker offering direct printing to a label printer, bypassing
 the OS print dialog
 entirely. Four drivers are supported:</p>
@@ -1067,13 +1220,13 @@ trust model NetBox uses for Export Templates and Custom Links. Only users with
         
         
           
-          <a href="../qrsizepreset/" class="md-footer__link md-footer__link--next" aria-label="Next: QR Size Preset">
+          <a href="../qrsizepreset/" class="md-footer__link md-footer__link--next" aria-label="Next: Label Size Preset">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                QR Size Preset
+                Label Size Preset
               </div>
             </div>
             <div class="md-footer__button md-icon">

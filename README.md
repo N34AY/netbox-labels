@@ -11,8 +11,8 @@ both direct label printers and regular printers.
 - **Repository:** https://github.com/N34AY/netbox-labels
 - **Issues / bug reports / feature requests:** https://github.com/N34AY/netbox-labels/issues
 - **Docs:** https://n34ay.github.io/netbox-labels/ — also readable as plain Markdown under
-  [docs/](docs/) here on GitHub, or via the "Model Documentation" link on a QR Template's or QR
-  Size Preset's page in a running NetBox instance
+  [docs/](docs/) here on GitHub, or via the "Model Documentation" link on a Label Template's or
+  Label Size Preset's page in a running NetBox instance
 
 ## Features
 
@@ -84,18 +84,18 @@ both direct label printers and regular printers.
 ## Configuration
 
 Once installed, admin-level settings (e.g. whether to offer direct label-printer printing at
-all) live in-app under **Plugins → QR Codes → Settings**, not in `configuration.py` — no
+all) live in-app under **Plugins → Labels → Settings**, not in `configuration.py` — no
 further static configuration is required beyond the `PLUGINS`/`PLUGINS_CONFIG` entries above.
 
 ## Getting started
 
-1. Go to **QR Коди → Templates** in the sidebar and create a template, or use the visual
+1. Go to **Labels → Templates** in the sidebar and create a template, or use the visual
    designer (the palette icon next to a template) to build one without writing code.
 2. Pick which object type(s) it applies to (or "apply to all").
-3. Open any matching object's detail page — a **QR Codes** panel appears with every
+3. Open any matching object's detail page — a **Labels** panel appears with every
    applicable template, ready to view/print.
 4. To print many objects at once, select their checkboxes on that object type's list page and
-   use the **Bulk print QR** button that appears in the selection toolbar.
+   use the **Bulk print labels** button that appears in the selection toolbar.
 
 ### Template context
 

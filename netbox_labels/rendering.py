@@ -77,14 +77,22 @@ def render_placeholder(qr_template, request):
     return _render_with_context(qr_template, build_placeholder_context(request))
 
 
-def sanitize_layout_for_context(layout, context):
+def sanitize_layout_for_context(layout, context, mark_errors=True):
     """Test-renders every "custom"/"format" text/barcode/qr element's own Jinja2
     fragment against the given context, and — in a deep copy of layout —
     falls back any element whose fragment raises to a static display of its
-    own raw expression/format string (recolored red for text/barcode, which
-    have a color to change), rather than letting the *entire* label fail to
-    render (and thus disappear completely from the preview) over one broken
-    binding.
+    own raw expression/format string, rather than letting the *entire* label
+    fail to render (and thus disappear completely from the preview) over one
+    broken binding.
+
+    mark_errors (recolors the fallback red for text/barcode) should only be
+    true when context is real object data: the placeholder object has no
+    attributes of its own at all, so chaining even one level past its first
+    (always-Undefined) attribute — e.g. object.a_terminations[0].device —
+    raises unconditionally, regardless of whether the expression is actually
+    fine for a real object. Recoloring that red would flag countless
+    ordinary expressions as broken purely because the mock object can't
+    satisfy them, not because anything is wrong.
 
     Returns (sanitized_layout, errors), where errors is a list of
     (element_id, message) pairs for whichever elements were rewritten.
@@ -123,10 +131,12 @@ def sanitize_layout_for_context(layout, context):
             # 'static' case, which escapes it like any other static text)
             # rather than going blank, so the broken element is still
             # visible on the label itself, not just in the preview's error
-            # panel. Recolored red so it's obviously not the real content.
+            # panel. Recolored red so it's obviously not the real content —
+            # but only when mark_errors confirms this against real data (see
+            # the docstring above).
             raw_source = element.get('expr' if element.get('binding') == 'custom' else 'format', '')
             element['binding'] = 'static'
             element['text'] = raw_source
-            if element.get('type') in ('text', 'barcode'):
+            if mark_errors and element.get('type') in ('text', 'barcode'):
                 element['color'] = '#dc3545'
     return sanitized, errors
