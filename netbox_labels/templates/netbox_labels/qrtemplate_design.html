@@ -130,7 +130,7 @@
 
   <div class="row">
     <div class="col-md-8">
-      <div id="qr-canvas-wrapper" style="overflow: auto; border: 1px solid var(--tblr-border-color, #444); padding: 2rem; min-height: 320px; display: flex; align-items: center; justify-content: center; background: repeating-conic-gradient(#8884 0% 25%, transparent 0% 50%) 50% / 20px 20px; touch-action: none;">
+      <div id="qr-canvas-wrapper" style="overflow: auto; border: 1px solid var(--tblr-border-color, #444); padding: 2rem; min-height: 320px; display: flex; align-items: safe center; justify-content: safe center; background: repeating-conic-gradient(#8884 0% 25%, transparent 0% 50%) 50% / 20px 20px; touch-action: none; cursor: grab;">
         <div id="qr-canvas" style="position: relative; background: #fff; flex: none; box-shadow: 0 0 0 1px #0003;"></div>
       </div>
     </div>
@@ -194,6 +194,21 @@
               </button>
               <div class="collapse mt-2" id="qr-preview-data-collapse">
                 <div class="alert alert-danger d-none netbox-qr-preview-error mb-2" id="qr-preview-error"></div>
+                <p class="form-text small">
+                  {% blocktrans trimmed %}
+                    This is <code>object_data</code>, not <code>object</code> — the object
+                    serialized the same way NetBox's REST API would return it, used by
+                    <code>${expr}</code> placeholders and custom Jinja2 expressions. It's a
+                    different shape than <code>object</code> (the raw model instance): a choice
+                    field like <code>object_data.profile.label</code> works here, while the
+                    equivalent on <code>object</code> would just be its bare stored value.
+                  {% endblocktrans %}
+                  {% if settings.DOCS_ROOT %}
+                    <a href="{% static 'docs/models/netbox_labels/qrtemplate/' %}#object-vs-object_data" target="_blank" rel="noopener">
+                      <i class="mdi mdi-information-outline"></i> {% trans "Documentation" %}
+                    </a>
+                  {% endif %}
+                </p>
                 <pre class="netbox-qr-preview-data" id="qr-preview-data-json"></pre>
               </div>
             </div>

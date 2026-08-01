@@ -329,7 +329,21 @@
 			var content = document.createElement('div');
 			content.style.cssText = [
 				'width:100%', 'height:100%', 'overflow:hidden',
-				'display:flex', 'align-items:center', 'font-size:11px',
+				'display:flex', 'align-items:center',
+				// Text elements render at their real configured size (converted
+				// through the same mm->px scale as the box itself, so it zooms
+				// along with everything else) — matching the actual mm-sized
+				// font-size the final render uses (layout.py). Other element
+				// types just need a legible placeholder label/icon size.
+				'font-size:' + (el.type === 'text' ? mmToPx(el.font_size_mm || 3) : 11) + 'px',
+				// Long unresolved binding source (e.g. an "${object.a...}"
+				// expression) is typically far longer than the real value it
+				// stands in for — without this, it wraps across lines and
+				// visually bleeds into whatever element sits just below,
+				// which the actual render never does (see layout.py, same
+				// three properties). Truncating it here to a single ellipsized
+				// line instead keeps the editor an accurate preview of that.
+				el.type === 'text' ? 'white-space:nowrap;text-overflow:ellipsis' : '',
 				// The canvas itself is always a fixed white background (it's
 				// mocking up a physical label, regardless of NetBox's own
 				// light/dark theme) — an explicit color keeps this readable
@@ -475,7 +489,7 @@
 
 	// Which barcode formats make sense for a barcode element's current
 	// Content binding — see the "Visual designer: barcode formats" section
-	// of the plugin's docs (docsIcon('barcode-formats') below) for the
+	// of the plugin's docs (docsIcon('visual-designer-barcode-formats') below) for the
 	// reasoning. Only "object_url" (always a URL) and "static" (the literal
 	// value is known up front) can actually be checked here; every other
 	// binding resolves to a different value per object, which the designer
@@ -567,12 +581,15 @@
 			}
 			if (el.binding === 'format') {
 				rows.push(field(
-					_('Format'), textInput('format', el.format || ''),
-					_('Mix literal text with ${expr} placeholders, e.g. "IP - ${object.primary_ip}"')
+					_('Format') + docsIcon('visual-designer-content-bindings'), textInput('format', el.format || ''),
+					_('Mix literal text with ${expr} placeholders, e.g. "IP - ${object_data.primary_ip}"')
 				));
 			}
 			if (el.binding === 'custom') {
-				rows.push(field(_('Expression'), textInput('expr', el.expr || ''), 'e.g. object.status, object.rack.name'));
+				rows.push(field(
+					_('Expression') + docsIcon('visual-designer-content-bindings'), textInput('expr', el.expr || ''),
+					'e.g. object_data.status.label, object_data.rack.name'
+				));
 			}
 			if (el.type === 'barcode') {
 				var allowedFormats = allowedBarcodeFormats(el);
@@ -584,7 +601,7 @@
 					el.barcode_format = 'CODE128';
 				}
 				rows.push(field(
-					_('Barcode format') + docsIcon('barcode-formats'),
+					_('Barcode format') + docsIcon('visual-designer-barcode-formats'),
 					selectInput('barcode_format', el.barcode_format || 'CODE128', BARCODE_FORMATS.filter(function (pair) {
 						return allowedFormats.indexOf(pair[0]) !== -1;
 					}))
@@ -684,7 +701,33 @@
 		};
 	}
 
+	var panState = null; // { startX, startY, startScrollLeft, startScrollTop }
+
+	canvasWrapper.addEventListener('mousedown', function (event) {
+		// Only pans when the press starts on empty space (the wrapper's own
+		// background, or the canvas's white background) — clicks on an
+		// element or resize handle are handled by their own mousedown
+		// listeners and must keep working as move/resize instead. Pressing
+		// here also always clears the current selection — same as clicking
+		// empty space in any other editor — whether or not the press turns
+		// into a pan drag.
+		if (event.target !== canvasWrapper && event.target !== canvas) {
+			return;
+		}
+		selectElement(null);
+		panState = {
+			startX: event.clientX, startY: event.clientY,
+			startScrollLeft: canvasWrapper.scrollLeft, startScrollTop: canvasWrapper.scrollTop,
+		};
+		canvasWrapper.style.cursor = 'grabbing';
+	});
+
 	document.addEventListener('mousemove', function (event) {
+		if (panState) {
+			canvasWrapper.scrollLeft = panState.startScrollLeft - (event.clientX - panState.startX);
+			canvasWrapper.scrollTop = panState.startScrollTop - (event.clientY - panState.startY);
+			return;
+		}
 		if (!dragState) {
 			return;
 		}
@@ -721,15 +764,13 @@
 	});
 
 	document.addEventListener('mouseup', function () {
+		if (panState) {
+			panState = null;
+			canvasWrapper.style.cursor = '';
+		}
 		if (dragState) {
 			dragState = null;
 			snapshot();
-		}
-	});
-
-	canvas.addEventListener('mousedown', function (event) {
-		if (event.target === canvas) {
-			selectElement(null);
 		}
 	});
 
