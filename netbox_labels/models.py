@@ -84,8 +84,8 @@ class QRTemplate(NetBoxModel):
 
     class Meta:
         ordering = ('name',)
-        verbose_name = _('QR template')
-        verbose_name_plural = _('QR templates')
+        verbose_name = _('label template')
+        verbose_name_plural = _('label templates')
 
     def __str__(self):
         return self.name
@@ -123,8 +123,8 @@ class QRSizePreset(NetBoxModel):
 
     class Meta:
         ordering = ('name',)
-        verbose_name = _('QR size preset')
-        verbose_name_plural = _('QR size presets')
+        verbose_name = _('label size preset')
+        verbose_name_plural = _('label size presets')
 
     def __str__(self):
         return f'{self.name} ({self.width_mm} × {self.height_mm}mm)'
@@ -134,23 +134,23 @@ class QRSizePreset(NetBoxModel):
 
 
 class QRSettings(models.Model):
-    """Singleton model for plugin-wide QR settings."""
+    """Singleton model for plugin-wide label settings."""
 
     show_niimbot_button = models.BooleanField(
         default=True,
         verbose_name=_('show "Print via…" button'),
         help_text=_(
             'Offer direct printing to a label printer (Niimbot, Zebra/ZPL, or generic ESC/POS, '
-            'over Bluetooth or USB) on rendered QR labels.'
+            'over Bluetooth or USB) on rendered labels.'
         ),
     )
 
     class Meta:
-        verbose_name = _('QR settings')
-        verbose_name_plural = _('QR settings')
+        verbose_name = _('label settings')
+        verbose_name_plural = _('label settings')
 
     def __str__(self):
-        return 'QR Settings'
+        return 'Label Settings'
 
     @classmethod
     def load(cls):

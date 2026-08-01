@@ -65,7 +65,7 @@ class QRTemplateFilterForm(NetBoxModelFilterSetForm):
 
 class QRSizePresetForm(NetBoxModelForm):
     fieldsets = (
-        FieldSet('name', 'description', 'width_mm', 'height_mm', 'tags', name=_('QR Size Preset')),
+        FieldSet('name', 'description', 'width_mm', 'height_mm', 'tags', name=_('Label Size Preset')),
     )
 
     class Meta:

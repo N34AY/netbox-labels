@@ -38,8 +38,8 @@ theme:
 
 nav:
   - Home: index.md
-  - QR Template: qrtemplate.md
-  - QR Size Preset: qrsizepreset.md
+  - Label Template: qrtemplate.md
+  - Label Size Preset: qrsizepreset.md
 
 # The search plugin's assets (a lunr stemmer bundle per language, regardless
 # of which one is actually configured) cost ~2MB for what's a handful of

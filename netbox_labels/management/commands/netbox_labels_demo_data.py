@@ -50,7 +50,7 @@ class Command(BaseCommand):
     help = (
         'Creates (or removes, with --flush) a small set of clearly-fake demo objects '
         '(a manufacturer, device type/role, sites, and devices, all named "Acme ...") '
-        'plus a couple of QR templates, so the plugin has something to try out or '
+        'plus a couple of label templates, so the plugin has something to try out or '
         'screenshot without touching real data. Safe to re-run — existing demo objects '
         'are reused rather than duplicated.'
     )
@@ -129,7 +129,7 @@ class Command(BaseCommand):
         device_template.object_types.set([device_ct])
 
         self.stdout.write(self.style.SUCCESS(
-            f'Created/verified {len(sites)} sites, {DEVICE_COUNT} devices, and 2 QR templates '
+            f'Created/verified {len(sites)} sites, {DEVICE_COUNT} devices, and 2 label templates '
             f'("{site_template.name}", "{device_template.name}").'
         ))
 
