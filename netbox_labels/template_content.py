@@ -6,7 +6,7 @@ from netbox.plugins import PluginTemplateExtension
 from .models import QRSettings, QRTemplate
 
 # NetBox's plugin API has no wildcard hook for "every object type" — each model that
-# should show the QR panel on its detail page has to be named explicitly here.
+# should show the Labels panel on its detail page has to be named explicitly here.
 PANEL_MODELS = (
     'dcim.device', 'dcim.devicetype', 'dcim.rack', 'dcim.location', 'dcim.site',
     'dcim.module', 'dcim.inventoryitem', 'dcim.cable', 'dcim.powerpanel', 'dcim.powerfeed',

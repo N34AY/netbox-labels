@@ -1,10 +1,10 @@
-# QR Size Preset
+# Label Size Preset
 
 Part of the [NetBox Labels](https://github.com/N34AY/netbox-labels) plugin.
 
-A **QR Size Preset** is a named label size (in millimeters), offered as a quick pick when setting
-a [QR Template](qrtemplate.md)'s canvas size in the visual designer — for common physical label
-sizes (e.g. a specific label roll or printer model) you use often.
+A **Label Size Preset** is a named label size (in millimeters), offered as a quick pick when
+setting a [Label Template](qrtemplate.md)'s canvas size in the visual designer — for common
+physical label sizes (e.g. a specific label roll or printer model) you use often.
 
 ## Fields
 

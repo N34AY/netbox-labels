@@ -2,13 +2,13 @@
 {% load static %}
 {% load i18n %}
 
-{% block title %}{% trans "QR Settings" %}{% endblock %}
+{% block title %}{% trans "Label Settings" %}{% endblock %}
 
 {% block header %}
   <div class="page-header m-0">
     <div class="container-fluid mt-2 mb-2 d-print-none">
       <div class="d-flex justify-content-between align-items-center">
-        <h1 class="page-title">{% trans "QR Settings" %}</h1>
+        <h1 class="page-title">{% trans "Label Settings" %}</h1>
         {% if settings.DOCS_ROOT %}
           <a
             href="{% static 'docs/models/netbox_labels/qrtemplate/' %}"

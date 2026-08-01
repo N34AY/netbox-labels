@@ -12,7 +12,7 @@ Please include:
 
 ## Trust model
 
-`html_code`/`css_code`/`js_code` on a QR template are rendered and executed as-is by the
+`html_code`/`css_code`/`js_code` on a label template are rendered and executed as-is by the
 browser of anyone who views that object's label — the same trust model NetBox itself uses for
 Export Templates and Custom Links. Only users holding `netbox_labels.add_qrtemplate` /
 `change_qrtemplate` should be trusted to author or edit templates; that permission is
