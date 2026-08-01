@@ -1,10 +1,10 @@
-# QR Template
+# Label Template
 
 Part of the [NetBox Labels](https://github.com/N34AY/netbox-labels) plugin.
 
-A **QR Template** defines an HTML/CSS/JS label — plus a Jinja2 expression for what the QR code
+A **Label Template** defines an HTML/CSS/JS label — plus a Jinja2 expression for what the QR code
 itself encodes — for one or more NetBox object types. Once a template is created, NetBox shows a
-"QR Codes" panel on the detail page of every object it applies to, letting you preview, print via
+"Labels" panel on the detail page of every object it applies to, letting you preview, print via
 the browser, or print directly to a label printer — Niimbot, Zebra, or any generic ESC/POS
 printer — over Bluetooth or USB.
 
@@ -92,12 +92,69 @@ attributes on that element:
 | `data-color-dark` / `data-color-light` | `#000000` / `#ffffff` | QR module colors. |
 | `data-correct-level` | `H` | Error-correction level (`L`/`M`/`Q`/`H`). Lower levels need fewer modules for the same data — useful for keeping small physical labels scannable. |
 
+## Visual designer: content bindings
+
+Every element the visual designer can add — text, barcode, and qr — has a **Content** field
+controlling what data it shows or encodes:
+
+| Binding | Renders |
+| --- | --- |
+| Object name | `{{ object }}` — the object's display string. |
+| Object URL | `{{ object_url }}` — its absolute NetBox detail page URL. |
+| Object type | `{{ object_type.model }}`, e.g. `"device"`. |
+| Static text | Whatever you typed, unchanged. |
+| Formatted text | Literal text with `${expr}` placeholders mixed in — see below. |
+| Custom Jinja2 expression | A single expression, e.g. `object_data.status.label`. |
+
+**qr** and **barcode** elements default to Object URL instead of Object name (a scannable code
+encoding a device's bare name isn't very useful); otherwise all three element types share this
+same list and behave identically for it.
+
+### `object` vs. `object_data`
+
+Both **Formatted text** and **Custom Jinja2 expression** can reference either variable, and it's
+easy to reach for the wrong one:
+
+- `object` is the actual Django model instance. Plain fields work fine (`object.name`), but a
+  choice field (like a cable's `profile`) returns its bare stored value as a string — `.label` on
+  that raises, since a string has no such attribute. Related-object chains (like
+  `object.a_terminations[0].device`) work *only* when the relation is actually populated for this
+  object; an empty or missing one raises too, since indexing/attribute access on Undefined always
+  does in Jinja2.
+- `object_data` is the same object serialized the way NetBox's own REST API would return it — the
+  same shape you see under **Object data (debug)** in the Preview panel. Choice fields come back
+  as `{"value": ..., "label": ...}` here, so `object_data.profile.label` gets you the human-readable
+  label a raw `object.profile.label` can't.
+
+When in doubt, click **Object data (debug)** in the Preview panel for the object you're testing
+against and match its exact shape.
+
+### When an expression doesn't resolve
+
+Two different placeholder-style fallbacks can show up, and they look different on purpose:
+
+- A **whole expression** that raises when evaluated (mismatched relations, bad syntax, indexing
+  into something empty) falls back to showing its own `${...}` source verbatim, so the element
+  stays visible instead of disappearing — recolored red once confirmed against a real object in
+  the Preview panel's "Real object" tab, but never in "Placeholder" mode, where an object this bare
+  can make plenty of otherwise-fine expressions look broken (see below).
+- A **single placeholder** inside Formatted text that resolves cleanly to "nothing defined" (a
+  missing attribute, not an exception) falls back independently to just that placeholder's bare
+  expression text, without the `${}` — literal text around it, and any other placeholder in the
+  same string, still render normally.
+
+The **Preview** panel's "Placeholder" tab tests every expression against a bare mock object with
+no fields of its own at all — useful for catching outright broken Jinja2 syntax early, but it
+*will* flag expressions that are only ever one level deep in trouble here (e.g. anything chained
+off a relation, like the `a_terminations` example above) purely because the mock object can't
+satisfy them, not because they're actually wrong. Switch to "Real object" and pick an actual
+object to confirm before assuming red text means something needs fixing.
+
 ## Visual designer: barcode formats
 
-A **qr** or **barcode** element added in the visual designer has its own **Content** field — the
-same binding options as a text element (Object name, Object URL, Object type, Static text,
-Formatted text, Custom Jinja2 expression) — instead of the template-wide **QR code value** field
-above. Both default to **Object URL**.
+A **qr** or **barcode** element's own **Content** field above works the same way as a text
+element's — instead of the template-wide **QR code value** field above. Both default to
+**Object URL**.
 
 Unlike a QR code, a barcode format constrains what it can encode: only `CODE128` accepts
 arbitrary text such as a URL. Every other format expects a specific digit count or character set:
@@ -128,14 +185,14 @@ whose value it can actually check up front:
 
 ## Where templates appear
 
-- A "QR Codes" panel on the detail page of every object type the template applies to, showing a
+- A "Labels" panel on the detail page of every object type the template applies to, showing a
   live preview at the label's true rendered size plus **Print** / **Print via…** buttons.
 - A standalone render page at
   `/plugins/labels/render/<content_type_id>/<object_id>/<template_id>/`.
 
 ## Printing to a label printer
 
-The **Print via…** button (hidden if disabled under **QR Codes → Settings** in your NetBox
+The **Print via…** button (hidden if disabled under **Labels → Settings** in your NetBox
 instance's sidebar) opens a small picker offering direct printing to a label printer, bypassing
 the OS print dialog
 entirely. Four drivers are supported:

@@ -274,7 +274,9 @@ class QRTemplatePreviewView(LoginRequiredMixin, PermissionRequiredMixin, View):
         # layout.py's default() fallback), but not every possible failure
         # mode is, so a genuinely broken expression is confirmed against
         # real data rather than flagged as an error against fake data.
-        safe_layout, element_errors = rendering.sanitize_layout_for_context(layout, render_context)
+        safe_layout, element_errors = rendering.sanitize_layout_for_context(
+            layout, render_context, mark_errors=is_real_object,
+        )
         html_code = layout_to_html(safe_layout, width_mm, height_mm)
         css_code = layout_to_css(safe_layout, width_mm, height_mm)
         preview_template = QRTemplate(html_code=html_code, css_code=css_code, qr_value=qr_value)
@@ -342,7 +344,7 @@ class QRRenderView(LoginRequiredMixin, View):
             # than shown; the viewer just gets a generic notice and a
             # (mostly empty) label instead of a 500.
             logger.exception('Failed to render QRTemplate %s for %s', qr_template.pk, instance)
-            render_error = str(_('This label could not be rendered. Contact a QR template administrator.'))
+            render_error = str(_('This label could not be rendered. Contact a label template administrator.'))
             context = {
                 'qr_value': '', 'body_html': '', 'css_code': qr_template.css_code, 'js_code': '',
                 'object_data': {}, 'object': instance, 'object_type': content_type,
@@ -367,8 +369,8 @@ class QRRenderView(LoginRequiredMixin, View):
 
 
 class QRBulkPrintView(LoginRequiredMixin, View):
-    """Landing page for bulk-printing QR labels for a set of selected objects
-    (reached from the "Bulk print QR" button injected into object list
+    """Landing page for bulk-printing labels for a set of selected objects
+    (reached from the "Bulk print labels" button injected into object list
     views — see template_content.py)."""
 
     def post(self, request):
@@ -483,6 +485,6 @@ class QRSettingsView(LoginRequiredMixin, PermissionRequiredMixin, View):
         form = forms.QRSettingsForm(request.POST, instance=settings)
         if form.is_valid():
             form.save()
-            messages.success(request, _('QR settings saved.'))
+            messages.success(request, _('Label settings saved.'))
             return redirect('plugins:netbox_labels:settings')
         return render(request, 'netbox_labels/settings.html', {'form': form})
