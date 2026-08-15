@@ -52,13 +52,19 @@
 
 	document.querySelectorAll('[data-netbox-qr]').forEach(function (el) {
 		var correctLevelName = (el.getAttribute('data-correct-level') || 'H').toUpperCase();
-		// Read before QRCode() below replaces el's contents with its own
-		// canvas/img: a per-element binding (see layout.py's
-		// _render_qr_element) renders its value as el's own inner text,
-		// which takes priority over the page-global data-value/NetBoxQR.value
-		// fallback used by elements with no binding of their own.
+		// Read before clearing el below: a per-element binding (see
+		// layout.py's _render_qr_element) renders its value as el's own
+		// inner text, which takes priority over the page-global
+		// data-value/NetBoxQR.value fallback used by elements with no
+		// binding of their own.
 		var ownValue = el.textContent.trim();
 		var text = ownValue || el.getAttribute('data-value') || window.NetBoxQR.value;
+		// The vendored QRCode() constructor only *appends* its canvas/img to
+		// el — it never clears el's existing content first — so without this,
+		// ownValue's raw text (e.g. a rendered "https://…" URL) stays in the
+		// DOM as a visible sibling of the QR code instead of being replaced
+		// by it.
+		el.textContent = '';
 		try {
 			new QRCode(el, {
 				text: text,
