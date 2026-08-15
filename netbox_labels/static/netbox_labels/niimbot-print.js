@@ -39,6 +39,39 @@
 		return client;
 	}
 
+	// niimbluelib.ImageEncoder.encodeCanvas() packs bits 8-per-byte along
+	// whichever axis is the "column" for the given printDirection — the
+	// canvas's height when printDirection is 'left' (rotated), its width
+	// otherwise — and throws "Column count must be multiple of 8" if that
+	// axis isn't one. Real label sizes routinely don't land on a multiple of
+	// 8px once rasterized (e.g. Niimbot's own 12.5mm cable-flag stock rounds
+	// to 100px at 203 DPI), so pad that axis up with white pixels rather than
+	// let a physical print job fail on an otherwise-unremarkable label size.
+	function padForEncoder(canvas, printDirection) {
+		var padsHeight = printDirection === 'left';
+		var size = padsHeight ? canvas.height : canvas.width;
+		var pad = (8 - (size % 8)) % 8;
+		if (pad === 0) {
+			return canvas;
+		}
+		var padded = document.createElement('canvas');
+		padded.width = canvas.width + (padsHeight ? 0 : pad);
+		padded.height = canvas.height + (padsHeight ? pad : 0);
+		var ctx = padded.getContext('2d');
+		ctx.fillStyle = '#ffffff';
+		ctx.fillRect(0, 0, padded.width, padded.height);
+		// Split the pad evenly across both edges rather than dumping it all on
+		// one side — with printDirection 'left' this axis becomes the tape's
+		// physical width after niimbluelib's rotation, so a corner-anchored pad
+		// would print the real content shifted off-center by up to a few
+		// tenths of a mm instead of centered on the label. An odd pad rounds
+		// the leading edge down, trailing edge up.
+		var offsetX = padsHeight ? 0 : Math.floor(pad / 2);
+		var offsetY = padsHeight ? Math.floor(pad / 2) : 0;
+		ctx.drawImage(canvas, offsetX, offsetY);
+		return padded;
+	}
+
 	async function printLabel(client, canvas, options) {
 		options = options || {};
 		var printDirection = options.printDirection || DEFAULT_PRINT_DIRECTION;
@@ -46,7 +79,7 @@
 		var printTaskName = client.getPrintTaskType() || options.printTaskName || FALLBACK_PRINT_TASK_NAME;
 		console.log(LOG_PREFIX, 'print task =', printTaskName);
 
-		var encoded = niimbluelib.ImageEncoder.encodeCanvas(canvas, printDirection);
+		var encoded = niimbluelib.ImageEncoder.encodeCanvas(padForEncoder(canvas, printDirection), printDirection);
 
 		var printTask = client.abstraction.newPrintTask(printTaskName, {
 			totalPages: 1,
