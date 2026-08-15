@@ -183,6 +183,26 @@ whose value it can actually check up front:
   is left blank and the mismatch is only logged to the browser console, prefixed
   `[NetBoxQR/Barcode]`.
 
+## Visual designer: QR error correction
+
+A QR code's error correction level (`L`/`M`/`Q`/`H`) trades off two things that both matter for a
+small printed label: a higher level survives more physical damage (scratches, dirt, fading)
+before becoming unreadable, but for the same encoded value it also needs more modules — a denser,
+finer-grained code that's harder to print cleanly on a low-DPI thermal printer and harder to scan
+reliably in the first place. Neither extreme is right for every label; it depends on how much data
+you're encoding relative to how much spare capacity that leaves at each level.
+
+A **qr** element's **Error correction** field defaults to **Auto**, which resolves this per
+printed object rather than picking one fixed level for every instance of the template: at render
+time (client-side, in `qr-render.js`), it picks the strongest level that doesn't need a bigger QR
+version than the weakest level (`L`) alone would require for that object's actual encoded value. A
+short value (e.g. a short URL) often fits the same version at every level, so **Auto** gets the
+extra damage-resistance for free; a long value that only fits at `L` keeps using `L`, rather than
+growing into a denser grid — so a label is never *more* fragile-to-print than always using `L`
+would be, only ever equal or better. Pick a fixed level instead if you specifically need every
+printed instance of a template at the same, predictable correction level regardless of content
+length.
+
 ## Where templates appear
 
 - A "Labels" panel on the detail page of every object type the template applies to, showing a
