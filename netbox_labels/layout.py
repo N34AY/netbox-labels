@@ -24,6 +24,7 @@ Layout shape:
             # text only:
             "font_size_mm": float, "font_weight": "normal" | "bold",
             "text_align": "left" | "center" | "right",
+            "vertical_align": "top" | "middle" | "bottom",
             "text_transform": "none" | "uppercase" | "lowercase" | "capitalize",
             "letter_spacing_mm": float,
             # qr only:
@@ -194,20 +195,33 @@ def _render_barcode_element(element):
     )
 
 
+_VALIGN_TO_FLEX = {'top': 'flex-start', 'middle': 'center', 'bottom': 'flex-end'}
+
+
 def _render_text_element(element):
-    style = _element_style(element)
-    style += f"font-size:{_num(element.get('font_size_mm'), 3)}mm;"
-    style += f"font-weight:{escape(element.get('font_weight') or 'normal')};"
-    style += f"color:{escape(element.get('color') or '#000000')};"
-    style += f"text-align:{escape(element.get('text_align') or 'left')};"
+    # A plain text node would shrink-wrap to its own content width inside a
+    # flex container, leaving text-align nothing to actually do — the inner
+    # span is given the full row width (see qr-designer.js's canvas preview,
+    # which wraps the same way for the same reason) so it has room to align
+    # within, while the outer div's align-items positions that span
+    # vertically within the element's own box.
+    vertical_align = element.get('vertical_align') or 'top'
+    align_items = _VALIGN_TO_FLEX.get(vertical_align, _VALIGN_TO_FLEX['top'])
+    style = _element_style(element) + f'overflow:hidden;display:flex;align-items:{align_items};'
+
+    span_style = 'width:100%;min-width:0;'
+    span_style += f"font-size:{_num(element.get('font_size_mm'), 3)}mm;"
+    span_style += f"font-weight:{escape(element.get('font_weight') or 'normal')};"
+    span_style += f"color:{escape(element.get('color') or '#000000')};"
+    span_style += f"text-align:{escape(element.get('text_align') or 'left')};"
     text_transform = element.get('text_transform') or 'none'
     if text_transform != 'none':
-        style += f"text-transform:{escape(text_transform)};"
+        span_style += f"text-transform:{escape(text_transform)};"
     letter_spacing = element.get('letter_spacing_mm')
     if letter_spacing:
-        style += f"letter-spacing:{_num(letter_spacing, 0)}mm;"
-    style += 'overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-family:Arial,Helvetica,sans-serif;'
-    return f'<div style="{style}">{text_content(element)}</div>'
+        span_style += f"letter-spacing:{_num(letter_spacing, 0)}mm;"
+    span_style += 'overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-family:Arial,Helvetica,sans-serif;'
+    return f'<div style="{style}"><span style="{span_style}">{text_content(element)}</span></div>'
 
 
 _RENDERERS = {

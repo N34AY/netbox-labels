@@ -37,8 +37,14 @@
 {% block content %}
 <div
   id="qr-designer"
-  data-width-mm="{{ object.width_mm }}"
-  data-height-mm="{{ object.height_mm }}"
+  {% comment %}
+    stringformat:"s" (not plain {{ object.width_mm }}) — Django's default number
+    formatting is locale-aware and uses a comma decimal separator for uk (e.g.
+    "12,5"), which parseFloat() in qr-designer.js would silently truncate at the
+    comma (12,5 -> 12).
+  {% endcomment %}
+  data-width-mm="{{ object.width_mm|stringformat:'s' }}"
+  data-height-mm="{{ object.height_mm|stringformat:'s' }}"
   data-preview-url="{% url 'plugins:netbox_labels:qrtemplate_preview' object.pk %}"
   data-search-url="{% url 'plugins:netbox_labels:qrtemplate_object_search' %}"
   data-docs-url="{% if settings.DOCS_ROOT %}{% static 'docs/models/netbox_labels/qrtemplate/' %}{% endif %}"
@@ -80,6 +86,12 @@
       </ul>
     </div>
 
+    <div class="btn-group">
+      <button type="button" id="qr-ruler-toggle" class="btn btn-sm btn-outline-primary" title="{% trans 'Toggle rulers' %}">
+        <i class="mdi mdi-ruler"></i>
+      </button>
+    </div>
+
     <div class="dropdown">
       <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" data-bs-auto-close="outside">
         <i class="mdi mdi-ruler-square"></i> <span id="qr-dims-label">{{ object.width_mm }} × {{ object.height_mm }} mm</span>
@@ -91,7 +103,7 @@
         </div>
         <div class="dropdown-divider"></div>
         {% for preset in size_presets %}
-          <a href="#" class="dropdown-item qr-preset" data-w="{{ preset.width_mm }}" data-h="{{ preset.height_mm }}">
+          <a href="#" class="dropdown-item qr-preset" data-w="{{ preset.width_mm|stringformat:'s' }}" data-h="{{ preset.height_mm|stringformat:'s' }}">
             {{ preset.name }} ({{ preset.width_mm }} × {{ preset.height_mm }}mm)
           </a>
         {% empty %}
@@ -130,8 +142,13 @@
 
   <div class="row">
     <div class="col-md-8">
-      <div id="qr-canvas-wrapper" style="overflow: auto; border: 1px solid var(--tblr-border-color, #444); padding: 2rem; min-height: 320px; display: flex; align-items: safe center; justify-content: safe center; background: repeating-conic-gradient(#8884 0% 25%, transparent 0% 50%) 50% / 20px 20px; touch-action: none; cursor: grab;">
-        <div id="qr-canvas" style="position: relative; background: #fff; flex: none; box-shadow: 0 0 0 1px #0003;"></div>
+      <div id="qr-canvas-area" class="qr-canvas-area">
+        <div id="qr-ruler-corner" class="qr-ruler-corner"></div>
+        <canvas id="qr-ruler-top" class="qr-ruler qr-ruler-top"></canvas>
+        <canvas id="qr-ruler-left" class="qr-ruler qr-ruler-left"></canvas>
+        <div id="qr-canvas-wrapper" style="overflow: auto; border: 1px solid var(--tblr-border-color, #444); padding: 2rem; min-height: 320px; display: flex; align-items: safe center; justify-content: safe center; background: repeating-conic-gradient(#8884 0% 25%, transparent 0% 50%) 50% / 20px 20px; touch-action: none; cursor: grab;">
+          <div id="qr-canvas" style="position: relative; background: #fff; flex: none; box-shadow: 0 0 0 1px #0003;"></div>
+        </div>
       </div>
     </div>
     <div class="col-md-4">
@@ -236,6 +253,51 @@
 </div>
 
 <style>
+  /* Rulers are an opt-in overlay around #qr-canvas-wrapper, laid out as a
+     2x2 grid (corner / top ruler / left ruler / the wrapper itself) so
+     toggling them just changes the two 0-sized tracks to RULER_SIZE_PX
+     (kept in sync with qr-designer.js) rather than reflowing anything else. */
+  .qr-canvas-area {
+    display: grid;
+    grid-template-columns: 0 1fr;
+    grid-template-rows: 0 1fr;
+  }
+  .qr-canvas-area.qr-rulers-visible {
+    grid-template-columns: 20px 1fr;
+    grid-template-rows: 20px 1fr;
+  }
+  .qr-ruler-corner, .qr-ruler {
+    display: none;
+  }
+  .qr-canvas-area.qr-rulers-visible .qr-ruler-corner,
+  .qr-canvas-area.qr-rulers-visible .qr-ruler {
+    display: block;
+  }
+  .qr-ruler-corner {
+    background: var(--tblr-bg-surface-secondary, #f8f9fa);
+    border: 1px solid var(--tblr-border-color, #444);
+    border-right: none;
+    border-bottom: none;
+  }
+  .qr-ruler {
+    width: 100%;
+    height: 100%;
+    background: var(--tblr-bg-surface-secondary, #f8f9fa);
+    border: 1px solid var(--tblr-border-color, #444);
+  }
+  .qr-ruler-top {
+    border-left: none;
+    border-bottom: none;
+  }
+  .qr-ruler-left {
+    border-top: none;
+    border-right: none;
+  }
+  #qr-canvas-wrapper {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
   .netbox-qr-icon-results {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(2.5rem, 1fr));

@@ -137,6 +137,66 @@ describe('initial render', () => {
   });
 });
 
+describe('text alignment', () => {
+  // Structure mirrors layout.py's _render_text_element: the outer .qr-el's
+  // content div carries vertical alignment via flex align-items, and an
+  // inner <span> (full-width, so text-align has room to act) carries
+  // horizontal alignment — see the "content is clipped..." / "A plain text
+  // node..." comments in qr-designer.js and layout.py respectively for why.
+  function textSpan(div) {
+    return div.querySelector('div > span');
+  }
+
+  test('defaults to left/top when text_align and vertical_align are unset (pre-existing saved elements)', () => {
+    loadDesigner({ elements: [TEXT_EL] });
+    const div = qrEls()[0];
+    expect(textSpan(div).style.textAlign).toBe('left');
+    expect(div.firstChild.style.alignItems).toBe('flex-start');
+  });
+
+  test('center/middle renders as a centered flex row and centered text', () => {
+    loadDesigner({ elements: [{ ...TEXT_EL, text_align: 'center', vertical_align: 'middle' }] });
+    const div = qrEls()[0];
+    expect(textSpan(div).style.textAlign).toBe('center');
+    expect(div.firstChild.style.alignItems).toBe('center');
+  });
+
+  test('right/bottom renders as a bottom-anchored flex row and right-aligned text', () => {
+    loadDesigner({ elements: [{ ...TEXT_EL, text_align: 'right', vertical_align: 'bottom' }] });
+    const div = qrEls()[0];
+    expect(textSpan(div).style.textAlign).toBe('right');
+    expect(div.firstChild.style.alignItems).toBe('flex-end');
+  });
+
+  test('the Properties panel offers a Vertical align select alongside the horizontal Align select, defaulting to Top', () => {
+    loadDesigner({ elements: [TEXT_EL] });
+    mousedown(qrEls()[0], 0, 0);
+    mouseup();
+
+    const valign = els().properties.querySelector('[data-prop="vertical_align"]');
+    expect(valign).not.toBeNull();
+    expect(valign.value).toBe('top');
+    expect(Array.from(valign.options).map((o) => o.value)).toEqual(['top', 'middle', 'bottom']);
+  });
+
+  test('changing Vertical align in the Properties panel updates the canvas preview', () => {
+    loadDesigner({ elements: [TEXT_EL] });
+    mousedown(qrEls()[0], 0, 0);
+    mouseup();
+
+    const valign = els().properties.querySelector('[data-prop="vertical_align"]');
+    valign.value = 'bottom';
+    valign.dispatchEvent(new Event('input', { bubbles: true }));
+
+    expect(qrEls()[0].firstChild.style.alignItems).toBe('flex-end');
+  });
+
+  test('qr/barcode/image elements stay centered regardless of vertical_align (text-only property)', () => {
+    loadDesigner({ elements: [{ id: 'qr-1', type: 'qr', x_mm: 0, y_mm: 0, width_mm: 10, height_mm: 10, binding: 'object_url' }] });
+    expect(qrEls()[0].firstChild.style.alignItems).toBe('center');
+  });
+});
+
 describe('selection and properties panel', () => {
   test('selecting an element shows its x/y/width/height fields and a delete button', () => {
     loadDesigner({ elements: [TEXT_EL] });
@@ -553,6 +613,127 @@ describe('grid / snap', () => {
     const div = qrEls()[0];
     expect(div.style.left).toBe(10 * BASE_PX_PER_MM + 'px');
     expect(div.style.top).toBe(6 * BASE_PX_PER_MM + 'px');
+  });
+});
+
+describe('rulers', () => {
+  test('toggling rulers flips the toggle button and the canvas area class, without a real 2D context available', () => {
+    // jsdom has no native <canvas> 2D context implementation (no `canvas`
+    // package installed) — getContext('2d') returns null, same as the
+    // niimbot/qr-print-common canvas-drawing code hits elsewhere in this
+    // suite. This exercises that exact path: toggling must not throw even
+    // though drawRulerAxis() can't actually draw anything.
+    loadDesigner({ elements: [TEXT_EL] });
+    const toggle = document.getElementById('qr-ruler-toggle');
+    const area = document.getElementById('qr-canvas-area');
+
+    expect(area.classList.contains('qr-rulers-visible')).toBe(false);
+    expect(() => toggle.click()).not.toThrow();
+    expect(area.classList.contains('qr-rulers-visible')).toBe(true);
+    expect(toggle.classList.contains('active')).toBe(true);
+
+    toggle.click();
+    expect(area.classList.contains('qr-rulers-visible')).toBe(false);
+    expect(toggle.classList.contains('active')).toBe(false);
+  });
+
+  describe('with a mocked 2D context', () => {
+    // Fixture defaults: 40x12mm canvas, zoom starts at 100% (8px/mm — see
+    // BASE_PX_PER_MM). #qr-canvas is geometry-mocked 20px in from
+    // #qr-canvas-wrapper's edge on both axes, standing in for the padding/
+    // centering #qr-canvas-wrapper applies in the real page.
+    const CANVAS_OFFSET = 20;
+    let ctxByCanvas;
+
+    function fakeCtx() {
+      return {
+        clearRect: jest.fn(), fillRect: jest.fn(), beginPath: jest.fn(),
+        moveTo: jest.fn(), lineTo: jest.fn(), stroke: jest.fn(), fillText: jest.fn(),
+        save: jest.fn(), restore: jest.fn(), translate: jest.fn(), rotate: jest.fn(),
+        setTransform: jest.fn(),
+      };
+    }
+
+    function ctxFor(id) {
+      return ctxByCanvas.get(document.getElementById(id));
+    }
+
+    beforeEach(() => {
+      loadDesigner({ elements: [TEXT_EL] });
+
+      ctxByCanvas = new Map();
+      jest.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(function () {
+        if (!ctxByCanvas.has(this)) {
+          ctxByCanvas.set(this, fakeCtx());
+        }
+        return ctxByCanvas.get(this);
+      });
+
+      const rulerTop = document.getElementById('qr-ruler-top');
+      const rulerLeft = document.getElementById('qr-ruler-left');
+      Object.defineProperty(rulerTop, 'clientWidth', { value: 400, configurable: true });
+      Object.defineProperty(rulerTop, 'clientHeight', { value: 20, configurable: true });
+      Object.defineProperty(rulerLeft, 'clientWidth', { value: 20, configurable: true });
+      Object.defineProperty(rulerLeft, 'clientHeight', { value: 300, configurable: true });
+
+      const canvas = document.getElementById('qr-canvas');
+      const wrapper = document.getElementById('qr-canvas-wrapper');
+      jest.spyOn(wrapper, 'getBoundingClientRect').mockReturnValue({ left: 0, top: 0 });
+      jest.spyOn(canvas, 'getBoundingClientRect').mockReturnValue({ left: CANVAS_OFFSET, top: CANVAS_OFFSET });
+    });
+
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    test('draws a labeled major tick every 5mm on the top ruler, covering the full 40mm width at 100% zoom', () => {
+      document.getElementById('qr-ruler-toggle').click();
+
+      const labels = ctxFor('qr-ruler-top').fillText.mock.calls.map((call) => call[0]);
+      expect(labels).toEqual(['0', '5', '10', '15', '20', '25', '30', '35', '40']);
+    });
+
+    test('the left ruler stops labeling past the label\'s own 12mm height', () => {
+      document.getElementById('qr-ruler-toggle').click();
+
+      const labels = ctxFor('qr-ruler-left').fillText.mock.calls.map((call) => call[0]);
+      expect(labels).toEqual(['0', '5', '10']);
+    });
+
+    test('zooming out widens the tick step so labels stay legibly spaced', () => {
+      els().zoomOut.click(); // 100% -> 80%
+      els().zoomOut.click(); // 80% -> 64%
+      els().zoomOut.click(); // 64% -> ~51%, pxPerMm ~4.1 -> minorStep 2mm, majorStep 10mm
+      document.getElementById('qr-ruler-toggle').click();
+
+      const labels = ctxFor('qr-ruler-top').fillText.mock.calls.map((call) => call[0]);
+      expect(labels).toEqual(['0', '10', '20', '30', '40']);
+    });
+
+    test('selecting an element highlights its mm span on both rulers', () => {
+      document.getElementById('qr-ruler-toggle').click();
+      mousedown(qrEls()[0], 0, 0); // selects TEXT_EL: x_mm 2, y_mm 2, width_mm 20, height_mm 5
+      mouseup();
+
+      const topCtx = ctxFor('qr-ruler-top');
+      const leftCtx = ctxFor('qr-ruler-left');
+      // fillRect(x, y, w, h) for the horizontal span [2mm, 22mm] at 8px/mm,
+      // offset by the mocked 20px canvas position: 20+2*8=36 to 20+22*8=196.
+      expect(topCtx.fillRect).toHaveBeenCalledWith(36, 0, 160, 20);
+      // Vertical span [2mm, 7mm]: 20+2*8=36 to 20+7*8=76.
+      expect(leftCtx.fillRect).toHaveBeenCalledWith(0, 36, 20, 40);
+    });
+
+    test('deselecting clears the ruler highlight on the next redraw', () => {
+      document.getElementById('qr-ruler-toggle').click();
+      mousedown(qrEls()[0], 0, 0);
+      mouseup();
+      ctxFor('qr-ruler-top').fillRect.mockClear();
+
+      mousedown(document.getElementById('qr-canvas-wrapper'), 0, 0);
+
+      expect(ctxFor('qr-ruler-top').fillRect).not.toHaveBeenCalled();
+    });
   });
 });
 

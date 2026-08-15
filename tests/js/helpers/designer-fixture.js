@@ -34,6 +34,7 @@ function designerFixtureHtml(options) {
     '      <li><a href="#" class="qr-grid-size-option active" data-value="5">5 mm</a></li>' +
     '      <li><a href="#" class="qr-grid-size-option" data-value="10">10 mm</a></li>' +
     '    </ul>' +
+    '    <button type="button" id="qr-ruler-toggle"></button>' +
     '    <a href="#" id="qr-add-text">Text</a>' +
     '    <a href="#" id="qr-add-image">Image</a>' +
     '    <a href="#" id="qr-add-qr">QR Code</a>' +
@@ -45,7 +46,12 @@ function designerFixtureHtml(options) {
     '    <input type="number" id="qr-canvas-height">' +
     '    <button type="button" id="qr-preview-btn"></button>' +
     '  </div>' +
-    '  <div id="qr-canvas-wrapper"><div id="qr-canvas"></div></div>' +
+    '  <div id="qr-canvas-area">' +
+    '    <div id="qr-ruler-corner"></div>' +
+    '    <canvas id="qr-ruler-top"></canvas>' +
+    '    <canvas id="qr-ruler-left"></canvas>' +
+    '    <div id="qr-canvas-wrapper"><div id="qr-canvas"></div></div>' +
+    '  </div>' +
     '  <div id="qr-properties-body"></div>' +
     '  <form id="qr-save-form">' +
     '    <input type="hidden" name="csrfmiddlewaretoken" value="test-csrf-token">' +
