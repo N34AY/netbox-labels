@@ -30,6 +30,30 @@
     @media print {
       .netbox-qr-toolbar { display: none !important; }
     }
+    .netbox-qr-toast-container {
+      position: fixed;
+      bottom: 1rem;
+      right: 1rem;
+      z-index: 3000;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      max-width: 22rem;
+    }
+    .netbox-qr-toast {
+      background: #842029;
+      color: #fff;
+      padding: 0.6rem 0.9rem;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      line-height: 1.3;
+      box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.3);
+      cursor: pointer;
+      white-space: pre-wrap;
+    }
+    @media print {
+      .netbox-qr-toast-container { display: none !important; }
+    }
     .netbox-qr-print-dialog {
       border: none;
       border-radius: 8px;
@@ -115,6 +139,8 @@
   {% endif %}
 </div>
 
+<div class="netbox-qr-toast-container" id="netbox-qr-toast-container"></div>
+
 {% if show_niimbot_button %}
 <dialog id="netbox-qr-print-dialog" class="netbox-qr-print-dialog">
   <h2>{% trans "Print via…" %}</h2>
@@ -140,6 +166,28 @@
     document.querySelector('.netbox-qr-toolbar').style.display = 'none';
   }
 
+  // Print failures (e.g. a Bluetooth/USB error, or niimbluelib rejecting an
+  // odd-sized label) previously only surfaced as an unhandled promise
+  // rejection in devtools — nothing told the person standing at the printer
+  // that the job didn't go through. Surface them as an on-page toast instead.
+  function netboxQrShowToast(message) {
+    if (window.self !== window.top) {
+      // This document's own toast container is inside a tiny embedded
+      // iframe (e.g. the object detail panel, ~100x60px) and wouldn't be
+      // visible — let the parent page show it instead.
+      window.parent.postMessage({ type: 'netbox-qr-print-error', message: message }, '*');
+      return;
+    }
+    var container = document.getElementById('netbox-qr-toast-container');
+    var toast = document.createElement('div');
+    toast.className = 'netbox-qr-toast';
+    toast.textContent = message;
+    toast.title = '{% trans "Dismiss" %}';
+    toast.addEventListener('click', function () { toast.remove(); });
+    container.appendChild(toast);
+    setTimeout(function () { toast.remove(); }, 10000);
+  }
+
   function netboxQrPrintLabel(driver, transport) {
     var dialog = document.getElementById('netbox-qr-print-dialog');
     if (dialog && dialog.open) {
@@ -147,7 +195,9 @@
     }
     var impl = NetBoxQRPrintCommon.getDriver(driver);
     if (impl) {
-      impl.print({ transport: transport });
+      impl.print({ transport: transport }).catch(function (e) {
+        netboxQrShowToast((e && e.message) ? e.message : String(e));
+      });
     }
   }
 </script>
