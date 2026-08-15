@@ -1140,7 +1140,7 @@ entirely. Four drivers are supported:</p>
 <tr>
 <td><strong>Niimbot</strong></td>
 <td>Bluetooth or USB</td>
-<td>Uses the community <a href="https://github.com/MultiMote/niimbluelib">niimbluelib</a> project, which auto-detects the correct protocol for the connected model. Covers essentially the full current Niimbot lineup (D11/D110, B1/B21 series, H1S, and dozens more) — see the library's <code>PrinterModel</code> enum for the exact list. It's a pinned/vendored snapshot, so brand-new models released after that snapshot won't be recognized until it's updated.</td>
+<td>Uses the community <a href="https://github.com/MultiMote/niimbluelib">niimbluelib</a> project, which auto-detects the correct protocol for the connected model. Covers essentially the full current Niimbot lineup (D11/D110, B1/B21 series, H1S, and dozens more) — see the library's <code>PrinterModel</code> enum for the exact list. It's a pinned/vendored snapshot, so brand-new models released after that snapshot won't be recognized until it's updated. Any <code>height_mm</code>/<code>width_mm</code> is fine, including ones that don't rasterize to a pixel count divisible by 8 at the printer's DPI (e.g. 12.5mm) — the odd edge is padded with white rather than rejected.</td>
 </tr>
 <tr>
 <td><strong>Zebra — ZPL</strong></td>
@@ -1166,8 +1166,11 @@ classic Bluetooth (SPP), which the
 <a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Bluetooth_API">Web Bluetooth API</a> cannot
 reach at all from a browser — it only speaks Bluetooth Low Energy (GATT). Niimbot printers use
 BLE, so Bluetooth works for that driver specifically.</p>
-<p>Progress and errors are logged to the browser console, prefixed <code>[NetBoxQR/Niimbot]</code>,
-<code>[NetBoxQR/ZPL]</code>, or <code>[NetBoxQR/ESC-POS]</code> depending on the driver used.</p>
+<p>Progress is logged to the browser console, prefixed <code>[NetBoxQR/Niimbot]</code>, <code>[NetBoxQR/ZPL]</code>, or
+<code>[NetBoxQR/ESC-POS]</code> depending on the driver used. A failure (device rejected the connection, an
+unsupported label size, etc.) also surfaces as an on-page toast — including when printing from a
+small embedded panel (e.g. an object detail page), where the toast is shown on that page itself
+rather than in the tiny iframe.</p>
 <p>Printer not listed, or a driver not working for your model? Use the <strong>Report a bug / request
 device support</strong> link in the same picker.</p>
 <h2 id="security">Security</h2>
