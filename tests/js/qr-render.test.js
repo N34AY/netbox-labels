@@ -86,6 +86,29 @@ describe('QR code rendering into [data-netbox-qr] elements', () => {
     expect(global.QRCode.mock.calls[0][1].text).toBe('https://netbox.example/dcim/sites/1/');
   });
 
+  test('clears the element\'s raw bound text before drawing, so it does not leak next to the QR code', () => {
+    // The real vendored QRCode() constructor only *appends* a <canvas>/<img>
+    // to the element — it never clears any pre-existing content first (see
+    // qrcode.js's Drawing constructor). Reproduces that exact append-only
+    // behavior here (rather than the other tests' plain jest.fn(), which
+    // touches the DOM not at all) to prove the raw "https://…" text this
+    // element started with is actually gone by the time QRCode() runs, not
+    // just that QRCode() was called with the right value.
+    global.QRCode = jest.fn(function (el) {
+      el.appendChild(document.createElement('canvas'));
+    });
+    global.QRCode.CorrectLevel = { L: 1, M: 0, Q: 3, H: 2 };
+    document.body.innerHTML = jsonScript('netbox-qr-meta', { value: 'x' }) +
+      '<div data-netbox-qr>https://netbox.example/dcim/devices/1/</div>';
+    jest.resetModules();
+    delete window.NetBoxQR;
+    require(SCRIPT_PATH);
+
+    const el = document.querySelector('[data-netbox-qr]');
+    expect(el.textContent).toBe('');
+    expect(el.querySelector('canvas')).not.toBeNull();
+  });
+
   test('parses width/height/colors/correct-level from data attributes', () => {
     loadRenderScript(
       jsonScript('netbox-qr-meta', { value: 'x' }) +
