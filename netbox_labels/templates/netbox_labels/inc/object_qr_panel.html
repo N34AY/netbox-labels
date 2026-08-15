@@ -46,6 +46,8 @@
 </div>
 
 {% if show_niimbot_button %}
+<div class="toast-container position-fixed bottom-0 end-0 p-3" id="netbox-qr-toast-container" style="z-index: 1090;"></div>
+
 <div class="modal fade" id="netbox-qr-print-modal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered modal-sm">
     <div class="modal-content">
@@ -80,19 +82,41 @@
 <script>
   // Each QR iframe (netbox_labels/render.html) posts its true rendered size on
   // load so it can be shown here at actual physical size, not an arbitrary box.
+  // It also posts print errors here, since its own toast would be invisible
+  // inside the ~100x60px iframe — this page has real space to show them in.
   window.addEventListener('message', function (event) {
-    if (!event.data || event.data.type !== 'netbox-qr-size') {
+    if (!event.data) {
       return;
     }
-    var iframes = document.querySelectorAll('iframe[id^="netbox-qr-iframe-"]');
-    for (var i = 0; i < iframes.length; i++) {
-      if (iframes[i].contentWindow === event.source) {
-        iframes[i].style.width = event.data.width + 'px';
-        iframes[i].style.height = event.data.height + 'px';
-        break;
+    if (event.data.type === 'netbox-qr-size') {
+      var iframes = document.querySelectorAll('iframe[id^="netbox-qr-iframe-"]');
+      for (var i = 0; i < iframes.length; i++) {
+        if (iframes[i].contentWindow === event.source) {
+          iframes[i].style.width = event.data.width + 'px';
+          iframes[i].style.height = event.data.height + 'px';
+          break;
+        }
       }
+    } else if (event.data.type === 'netbox-qr-print-error') {
+      netboxQrShowToast(event.data.message);
     }
   });
+
+  function netboxQrShowToast(message) {
+    var container = document.getElementById('netbox-qr-toast-container');
+    var toast = document.createElement('div');
+    toast.className = 'toast align-items-center text-bg-danger border-0 show';
+    toast.setAttribute('role', 'alert');
+    toast.innerHTML =
+      '<div class="d-flex">' +
+      '<div class="toast-body"></div>' +
+      '<button type="button" class="btn-close btn-close-white me-2 m-auto" aria-label="{% trans "Close" %}"></button>' +
+      '</div>';
+    toast.querySelector('.toast-body').textContent = message;
+    toast.querySelector('.btn-close').addEventListener('click', function () { toast.remove(); });
+    container.appendChild(toast);
+    setTimeout(function () { toast.remove(); }, 10000);
+  }
 
   // The print-via modal is shared by every template's button below, so the
   // trigger stashes which one it was opened for here before Bootstrap shows it.
