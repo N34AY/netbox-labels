@@ -28,8 +28,15 @@
 	var showGrid = false;
 	var gridSizeMm = 5;
 
+	// Rulers are the same kind of ephemeral UI state as grid/zoom above.
+	var showRulers = false;
+
 	var canvas = document.getElementById('qr-canvas');
 	var canvasWrapper = document.getElementById('qr-canvas-wrapper');
+	var canvasArea = document.getElementById('qr-canvas-area');
+	var rulerTop = document.getElementById('qr-ruler-top');
+	var rulerLeft = document.getElementById('qr-ruler-left');
+	var rulerToggleBtn = document.getElementById('qr-ruler-toggle');
 	var propertiesBody = document.getElementById('qr-properties-body');
 	var undoBtn = document.getElementById('qr-undo');
 	var redoBtn = document.getElementById('qr-redo');
@@ -250,6 +257,196 @@
 	});
 
 	//
+	// Rulers
+	//
+	// Two <canvas> strips (not to be confused with #qr-canvas, the label
+	// mockup itself) along the top/left edges of #qr-canvas-wrapper, showing
+	// an mm scale so the admin can eyeball sizes/positions directly against
+	// the label instead of only reading the Properties panel's numbers. They
+	// track the label's on-screen position (which moves with zoom, panning/
+	// scroll, and the flexbox centering #qr-canvas-wrapper uses when its
+	// content is smaller than the viewport) by simply measuring
+	// #qr-canvas's own getBoundingClientRect() each redraw rather than
+	// re-deriving that from scroll/zoom state.
+
+	// "Nice" tick spacings to choose from at any zoom level, in mm.
+	var RULER_TICK_STEPS_MM = [1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000];
+
+	function pickRulerStep(pxPerMm, minPx) {
+		for (var i = 0; i < RULER_TICK_STEPS_MM.length; i++) {
+			if (RULER_TICK_STEPS_MM[i] * pxPerMm >= minPx) {
+				return RULER_TICK_STEPS_MM[i];
+			}
+		}
+		return RULER_TICK_STEPS_MM[RULER_TICK_STEPS_MM.length - 1];
+	}
+
+	function cssVar(name, fallback) {
+		var value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+		return value || fallback;
+	}
+
+	// Matches a ruler <canvas>'s backing pixel buffer to its CSS box (at the
+	// screen's real pixel density, so tick lines/text stay crisp) — canvas
+	// elements otherwise stretch a fixed-resolution buffer to fit, same as a
+	// blurry <img>.
+	function syncRulerCanvasSize(rulerCanvas) {
+		var dpr = window.devicePixelRatio || 1;
+		var w = rulerCanvas.clientWidth;
+		var h = rulerCanvas.clientHeight;
+		if (rulerCanvas.width !== Math.round(w * dpr) || rulerCanvas.height !== Math.round(h * dpr)) {
+			rulerCanvas.width = Math.round(w * dpr);
+			rulerCanvas.height = Math.round(h * dpr);
+		}
+		var ctx = rulerCanvas.getContext('2d');
+		if (ctx) {
+			ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+		}
+		return ctx;
+	}
+
+	// Draws one ruler strip. axis 'x' draws left-to-right (top ruler), 'y'
+	// draws top-to-bottom (left ruler, with rotated labels). offsetPx is
+	// where mm 0 falls in the ruler's own coordinate space — i.e. the
+	// label's on-screen edge relative to the ruler strip's own edge, which
+	// runs flush with #qr-canvas-wrapper's edge (see the grid layout in
+	// qrtemplate_design.html).
+	function drawRulerAxis(rulerCanvas, axis, offsetPx, lengthMm, highlightRange) {
+		var ctx = syncRulerCanvasSize(rulerCanvas);
+		if (!ctx) {
+			// jsdom (the test environment) doesn't implement a real 2D canvas
+			// context without the optional native `canvas` package — nothing
+			// to draw against, so there's nothing more to do here.
+			return;
+		}
+		var w = rulerCanvas.clientWidth;
+		var h = rulerCanvas.clientHeight;
+		var sizePx = axis === 'x' ? w : h;
+		ctx.clearRect(0, 0, w, h);
+
+		var pxPerMm = effectiveScale();
+		var minorStep = pickRulerStep(pxPerMm, 6);
+		var majorStep = pickRulerStep(pxPerMm, 40);
+		majorStep = Math.ceil(majorStep / minorStep) * minorStep;
+
+		var tickColor = cssVar('--tblr-border-color', '#444');
+		var textColor = cssVar('--tblr-body-color', '#333');
+		var highlightColor = '#0d6efd40';
+
+		if (highlightRange) {
+			var hStart = offsetPx + highlightRange[0] * pxPerMm;
+			var hEnd = offsetPx + highlightRange[1] * pxPerMm;
+			ctx.fillStyle = highlightColor;
+			if (axis === 'x') {
+				ctx.fillRect(hStart, 0, hEnd - hStart, h);
+			} else {
+				ctx.fillRect(0, hStart, w, hEnd - hStart);
+			}
+		}
+
+		// Only the visible pixel range needs ticks — map it back to mm, clamp
+		// to the label's own extent (0..lengthMm), and pad by one step so a
+		// partially-scrolled-off tick's label doesn't pop in/out abruptly.
+		var mmMin = Math.max(0, (0 - offsetPx) / pxPerMm - minorStep);
+		var mmMax = Math.min(lengthMm, (sizePx - offsetPx) / pxPerMm + minorStep);
+
+		ctx.strokeStyle = tickColor;
+		ctx.fillStyle = textColor;
+		// Bold: at this font size (matching the ruler's own 20px strip),
+		// a normal-weight number reads as a barely-there hairline against a
+		// light-theme background — bold keeps it legible in both themes
+		// without needing a heavier, space-hungry font size.
+		ctx.font = 'bold 10px sans-serif';
+		ctx.lineWidth = 1;
+		ctx.beginPath();
+
+		var startMm = Math.floor(mmMin / minorStep) * minorStep;
+		for (var mm = startMm; mm <= mmMax; mm += minorStep) {
+			var roundedMm = Math.round(mm * 100) / 100;
+			var pos = Math.round(offsetPx + roundedMm * pxPerMm) + 0.5;
+			var isMajor = Math.abs(roundedMm % majorStep) < 1e-6;
+			var tickLen = isMajor ? 8 : 4;
+
+			if (axis === 'x') {
+				ctx.moveTo(pos, h);
+				ctx.lineTo(pos, h - tickLen);
+			} else {
+				ctx.moveTo(w, pos);
+				ctx.lineTo(w - tickLen, pos);
+			}
+
+			if (isMajor && roundedMm >= 0 && roundedMm <= lengthMm) {
+				var label = String(roundedMm);
+				if (axis === 'x') {
+					ctx.save();
+					ctx.textAlign = 'left';
+					ctx.fillText(label, pos + 2, 8);
+					ctx.restore();
+				} else {
+					ctx.save();
+					ctx.translate(w - tickLen - 2, pos);
+					ctx.rotate(-Math.PI / 2);
+					ctx.textAlign = 'right';
+					ctx.fillText(label, 0, 0);
+					ctx.restore();
+				}
+			}
+		}
+		ctx.stroke();
+
+		// Mark the label's own bounds (0 and lengthMm) with a solid line
+		// distinct from the regular tick marks, since those two matter more
+		// than any other ("this is where my label starts/ends").
+		var startPos = Math.round(offsetPx) + 0.5;
+		var endPos = Math.round(offsetPx + lengthMm * pxPerMm) + 0.5;
+		ctx.strokeStyle = '#0d6efd';
+		ctx.beginPath();
+		[startPos, endPos].forEach(function (pos) {
+			if (axis === 'x') {
+				ctx.moveTo(pos, h);
+				ctx.lineTo(pos, 0);
+			} else {
+				ctx.moveTo(w, pos);
+				ctx.lineTo(0, pos);
+			}
+		});
+		ctx.stroke();
+	}
+
+	function drawRulers() {
+		if (!showRulers) {
+			return;
+		}
+		var wrapperRect = canvasWrapper.getBoundingClientRect();
+		var canvasRect = canvas.getBoundingClientRect();
+		var offsetX = canvasRect.left - wrapperRect.left;
+		var offsetY = canvasRect.top - wrapperRect.top;
+
+		// Highlights the selected element's span on each ruler, so its mm
+		// size/position reads directly off the scale — the same numbers
+		// already shown in the Properties panel, just placed in context.
+		var selected = selectedId ? findElement(selectedId) : null;
+		var hRange = selected ? [selected.x_mm, selected.x_mm + selected.width_mm] : null;
+		var vRange = selected ? [selected.y_mm, selected.y_mm + selected.height_mm] : null;
+
+		drawRulerAxis(rulerTop, 'x', offsetX, canvasWidthMm, hRange);
+		drawRulerAxis(rulerLeft, 'y', offsetY, canvasHeightMm, vRange);
+	}
+
+	rulerToggleBtn.addEventListener('click', function () {
+		showRulers = !showRulers;
+		rulerToggleBtn.classList.toggle('active', showRulers);
+		canvasArea.classList.toggle('qr-rulers-visible', showRulers);
+		drawRulers();
+	});
+
+	canvasWrapper.addEventListener('scroll', drawRulers);
+	window.addEventListener('resize', drawRulers);
+	if (window.ResizeObserver) {
+		new ResizeObserver(drawRulers).observe(canvasWrapper);
+	}
+
+	//
 	// Rendering
 	//
 
@@ -327,23 +524,14 @@
 			// stick out past the edge, so they live on the unclipped outer
 			// div instead of this inner one.
 			var content = document.createElement('div');
+			// Vertical align only applies to text (qr/barcode/image stay
+			// centered, matching layout.py — _render_text_element is the
+			// only renderer that reads vertical_align at all).
+			var VALIGN_TO_FLEX = { top: 'flex-start', middle: 'center', bottom: 'flex-end' };
+			var alignItems = el.type === 'text' ? (VALIGN_TO_FLEX[el.vertical_align] || 'flex-start') : 'center';
 			content.style.cssText = [
 				'width:100%', 'height:100%', 'overflow:hidden',
-				'display:flex', 'align-items:center',
-				// Text elements render at their real configured size (converted
-				// through the same mm->px scale as the box itself, so it zooms
-				// along with everything else) — matching the actual mm-sized
-				// font-size the final render uses (layout.py). Other element
-				// types just need a legible placeholder label/icon size.
-				'font-size:' + (el.type === 'text' ? mmToPx(el.font_size_mm || 3) : 11) + 'px',
-				// Long unresolved binding source (e.g. an "${object.a...}"
-				// expression) is typically far longer than the real value it
-				// stands in for — without this, it wraps across lines and
-				// visually bleeds into whatever element sits just below,
-				// which the actual render never does (see layout.py, same
-				// three properties). Truncating it here to a single ellipsized
-				// line instead keeps the editor an accurate preview of that.
-				el.type === 'text' ? 'white-space:nowrap;text-overflow:ellipsis' : '',
+				'display:flex', 'align-items:' + alignItems,
 				// The canvas itself is always a fixed white background (it's
 				// mocking up a physical label, regardless of NetBox's own
 				// light/dark theme) — an explicit color keeps this readable
@@ -354,12 +542,6 @@
 				// property, so it gets a plain neutral placeholder color.
 				'color:' + (el.type === 'image' ? '#555' : (el.color || '#000000')),
 				'background:' + ((el.type === 'qr' || el.type === 'barcode') ? '#f8f9fa' : el.type === 'image' && !el.src ? '#eee' : 'transparent'),
-				// Text sitting flush against the box's left edge is hard to
-				// tell apart from the border itself — a small inset here is
-				// purely an editor legibility nicety (the real render, via
-				// _render_text_element, is unpadded, matching the exact box
-				// the admin drew).
-				el.type === 'text' ? 'padding-left:3px' : '',
 			].join(';');
 
 			if (el.type === 'qr') {
@@ -382,7 +564,34 @@
 					content.textContent = _('Image');
 				}
 			} else {
-				content.textContent = previewText(el);
+				// A plain text node directly in a flex container shrink-wraps
+				// to its own content width, so text-align on the container
+				// would have no room to do anything — an inner width:100%
+				// span gives it that room, matching layout.py's structure
+				// (_render_text_element wraps the same way, for the same
+				// reason) so this preview and the real render agree.
+				var textSpan = document.createElement('span');
+				textSpan.style.cssText = [
+					'width:100%', 'min-width:0',
+					// Text elements render at their real configured size
+					// (converted through the same mm->px scale as the box
+					// itself, so it zooms along with everything else) —
+					// matching the actual mm-sized font-size the final render
+					// uses (layout.py).
+					'font-size:' + mmToPx(el.font_size_mm || 3) + 'px',
+					'text-align:' + (el.text_align || 'left'),
+					// Long unresolved binding source (e.g. an
+					// "${object.a...}" expression) is typically far longer
+					// than the real value it stands in for — without this,
+					// it wraps across lines and visually bleeds into
+					// whatever element sits just below, which the actual
+					// render never does (see layout.py, same property).
+					// Truncating it here to a single ellipsized line instead
+					// keeps the editor an accurate preview of that.
+					'white-space:nowrap', 'overflow:hidden', 'text-overflow:ellipsis',
+				].join(';');
+				textSpan.textContent = previewText(el);
+				content.appendChild(textSpan);
 			}
 			div.appendChild(content);
 
@@ -428,6 +637,8 @@
 				div.appendChild(deleteIcon);
 			}
 		});
+
+		drawRulers();
 	}
 
 	function deleteElement(id) {
@@ -618,6 +829,7 @@
 				rows.push(field(_('Weight'), selectInput('font_weight', el.font_weight || 'normal', [['normal', _('Normal')], ['bold', _('Bold')]])));
 				rows.push(field(_('Color'), colorInput('color', el.color || '#000000')));
 				rows.push(field(_('Align'), selectInput('text_align', el.text_align || 'left', [['left', _('Left')], ['center', _('Center')], ['right', _('Right')]])));
+				rows.push(field(_('Vertical align'), selectInput('vertical_align', el.vertical_align || 'top', [['top', _('Top')], ['middle', _('Middle')], ['bottom', _('Bottom')]])));
 				rows.push(field(_('Transform'), selectInput('text_transform', el.text_transform || 'none', [
 					['none', _('None')], ['uppercase', _('UPPERCASE')], ['lowercase', _('lowercase')], ['capitalize', _('Capitalize')],
 				])));
@@ -827,7 +1039,7 @@
 			id: uid('text'), type: 'text',
 			x_mm: 2, y_mm: 2, width_mm: Math.max(10, canvasWidthMm - 4), height_mm: 4,
 			binding: 'object', font_size_mm: 3, font_weight: 'normal',
-			color: '#000000', text_align: 'left', text_transform: 'none', letter_spacing_mm: 0,
+			color: '#000000', text_align: 'left', vertical_align: 'top', text_transform: 'none', letter_spacing_mm: 0,
 		};
 		elements.push(el);
 		selectElement(el.id);
