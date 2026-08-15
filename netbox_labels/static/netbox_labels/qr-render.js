@@ -48,10 +48,49 @@
 		el.textContent = '!';
 	}
 
+	// "auto" error correction: picks the strongest level (most resilient to
+	// physical damage — scratches, dirt, fading) that doesn't force a bigger
+	// QR version than the weakest level (L) alone would need for this exact
+	// text. A short value (e.g. a short URL) often fits the same version at
+	// every level, so auto gets the extra resilience for free; a long value
+	// that only fits at L keeps using L, rather than growing into a denser
+	// grid that's harder to print cleanly on a low-DPI thermal printer and
+	// harder to scan reliably — so labels never end up *more* fragile than
+	// always using L would, only ever equal or better.
+	//
+	// Determined by actually instantiating the vendored library against a
+	// detached, never-rendered element and reading back its own module
+	// count, rather than reimplementing QR's capacity table ourselves — that
+	// table needs to match the vendored copy exactly, or this silently
+	// drifts from what actually gets drawn.
+	var AUTO_LEVEL_CANDIDATES = ['H', 'Q', 'M', 'L'];
+
+	function qrModuleCount(text, correctLevel) {
+		var probe = document.createElement('div');
+		var qr = new QRCode(probe, { text: text, width: 1, height: 1, correctLevel: correctLevel });
+		return qr._oQRCode.getModuleCount();
+	}
+
+	function pickAutoCorrectLevel(text) {
+		try {
+			var baseline = qrModuleCount(text, QRCode.CorrectLevel.L);
+			for (var i = 0; i < AUTO_LEVEL_CANDIDATES.length; i++) {
+				var name = AUTO_LEVEL_CANDIDATES[i];
+				if (qrModuleCount(text, QRCode.CorrectLevel[name]) <= baseline) {
+					return name;
+				}
+			}
+		} catch (e) {
+			// A failed probe must not stop the real QR code (drawn right
+			// after this) from rendering — fall through to a safe default.
+		}
+		return 'H';
+	}
+
 	var errors = [];
 
 	document.querySelectorAll('[data-netbox-qr]').forEach(function (el) {
-		var correctLevelName = (el.getAttribute('data-correct-level') || 'H').toUpperCase();
+		var correctLevelAttr = (el.getAttribute('data-correct-level') || 'H').toUpperCase();
 		// Read before clearing el below: a per-element binding (see
 		// layout.py's _render_qr_element) renders its value as el's own
 		// inner text, which takes priority over the page-global
@@ -66,6 +105,7 @@
 		// by it.
 		el.textContent = '';
 		try {
+			var correctLevelName = correctLevelAttr === 'AUTO' ? pickAutoCorrectLevel(text) : correctLevelAttr;
 			new QRCode(el, {
 				text: text,
 				width: parseInt(el.getAttribute('data-width'), 10) || 200,

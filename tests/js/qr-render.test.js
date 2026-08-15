@@ -109,6 +109,85 @@ describe('QR code rendering into [data-netbox-qr] elements', () => {
     expect(el.querySelector('canvas')).not.toBeNull();
   });
 
+  describe('"auto" error correction level', () => {
+    // The real vendored QRCode() exposes the resulting module count via
+    // `this._oQRCode.getModuleCount()` (see qrcode.js's makeCode/Drawing) —
+    // this mock reproduces just that shape, keyed by the numeric
+    // correctLevel value each candidate probe is called with, so the
+    // selection algorithm can be tested against controlled scenarios without
+    // needing real QR capacity math.
+    function mockQRCodeWithModuleCounts(moduleCountByLevel) {
+      const mock = jest.fn(function (el, opts) {
+        this._oQRCode = { getModuleCount: () => moduleCountByLevel[opts.correctLevel] };
+      });
+      mock.CorrectLevel = { L: 1, M: 0, Q: 3, H: 2 };
+      return mock;
+    }
+
+    function loadWithAutoLevel(moduleCountByLevel, text) {
+      global.QRCode = mockQRCodeWithModuleCounts(moduleCountByLevel);
+      document.body.innerHTML = jsonScript('netbox-qr-meta', { value: 'x' }) +
+        '<div data-netbox-qr data-correct-level="auto">' + text + '</div>';
+      jest.resetModules();
+      delete window.NetBoxQR;
+      require(SCRIPT_PATH);
+      const realEl = document.querySelector('[data-netbox-qr]');
+      const realCall = global.QRCode.mock.calls.find((call) => call[0] === realEl);
+      return realCall[1];
+    }
+
+    test('picks H when every level fits in the same module count (a short value has spare capacity)', () => {
+      const opts = loadWithAutoLevel({ 2: 21, 3: 21, 0: 21, 1: 21 }, 'SHORT');
+      expect(opts.correctLevel).toBe(2); // H
+      expect(opts.text).toBe('SHORT');
+    });
+
+    test('falls back to L when only L avoids growing to a bigger module grid (a long value has no spare capacity)', () => {
+      const opts = loadWithAutoLevel({ 2: 33, 3: 29, 0: 25, 1: 21 }, 'A LONG VALUE');
+      expect(opts.correctLevel).toBe(1); // L
+    });
+
+    test('picks the strongest level that still matches the L baseline, not always an extreme', () => {
+      const opts = loadWithAutoLevel({ 2: 25, 3: 25, 0: 21, 1: 21 }, 'MEDIUM VALUE');
+      expect(opts.correctLevel).toBe(0); // M
+    });
+
+    test('an explicit (non-auto) level is used as-is, unaffected by the auto-selection path', () => {
+      global.QRCode = mockQRCodeWithModuleCounts({});
+      document.body.innerHTML = jsonScript('netbox-qr-meta', { value: 'x' }) +
+        '<div data-netbox-qr data-correct-level="q">VALUE</div>';
+      jest.resetModules();
+      delete window.NetBoxQR;
+      require(SCRIPT_PATH);
+
+      expect(global.QRCode.mock.calls).toHaveLength(1); // no probes — auto-selection never runs
+      expect(global.QRCode.mock.calls[0][1].correctLevel).toBe(3); // Q
+    });
+
+    test('falls back to H if the module-count probe itself throws, without aborting the real render', () => {
+      global.QRCode = jest.fn(function () {
+        throw new Error('probe failed');
+      });
+      global.QRCode.CorrectLevel = { L: 1, M: 0, Q: 3, H: 2 };
+      document.body.innerHTML = jsonScript('netbox-qr-meta', { value: 'x' }) +
+        '<div data-netbox-qr data-correct-level="auto">X</div>';
+      jest.resetModules();
+      delete window.NetBoxQR;
+      require(SCRIPT_PATH);
+
+      // First call is the L-baseline probe; since every call throws
+      // (including this one), pickAutoCorrectLevel's own try/catch falls
+      // back to H rather than letting that exception escape — the second,
+      // real call (against the actual element) is then made with H, and
+      // that one throwing is left to the existing per-element error
+      // handling (error placeholder), not this fallback.
+      expect(global.QRCode.mock.calls).toHaveLength(2);
+      const realEl = document.querySelector('[data-netbox-qr]');
+      expect(global.QRCode.mock.calls[1][0]).toBe(realEl);
+      expect(global.QRCode.mock.calls[1][1].correctLevel).toBe(2); // H
+    });
+  });
+
   test('parses width/height/colors/correct-level from data attributes', () => {
     loadRenderScript(
       jsonScript('netbox-qr-meta', { value: 'x' }) +
