@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-01 10:41+0300\n"
+"POT-Creation-Date: 2026-08-14 23:24+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -33,7 +33,7 @@ msgstr "Загальний"
 msgid "Applies To"
 msgstr "Застосовується до"
 
-#: forms.py:22 templates/netbox_labels/qrtemplate_design.html:114
+#: forms.py:22 templates/netbox_labels/qrtemplate_design.html:127
 msgid "QR Code"
 msgstr "QR-код"
 
@@ -122,8 +122,8 @@ msgstr "ширина (мм)"
 msgid ""
 "Physical label width. Used as the default canvas size in the visual designer."
 msgstr ""
-"Фізична ширина бірки. Використовується як розмір полотна за замовчуванням "
-"у візуальному дизайнері."
+"Фізична ширина бірки. Використовується як розмір полотна за замовчуванням у "
+"візуальному дизайнері."
 
 #: models.py:61 models.py:121
 msgid "height (mm)"
@@ -134,8 +134,8 @@ msgid ""
 "Physical label height. Used as the default canvas size in the visual "
 "designer."
 msgstr ""
-"Фізична висота бірки. Використовується як розмір полотна за замовчуванням "
-"у візуальному дизайнері."
+"Фізична висота бірки. Використовується як розмір полотна за замовчуванням у "
+"візуальному дизайнері."
 
 #: models.py:66
 msgid "HTML"
@@ -194,8 +194,8 @@ msgid ""
 "Offer direct printing to a label printer (Niimbot, Zebra/ZPL, or generic ESC/"
 "POS, over Bluetooth or USB) on rendered labels."
 msgstr ""
-"Пропонувати прямий друк на принтер бірок (Niimbot, Zebra/ZPL або "
-"звичайний ESC/POS, через Bluetooth чи USB) на відрендерених бірках."
+"Пропонувати прямий друк на принтер бірок (Niimbot, Zebra/ZPL або звичайний "
+"ESC/POS, через Bluetooth чи USB) на відрендерених бірках."
 
 #: models.py:149 models.py:150
 msgid "label settings"
@@ -211,7 +211,7 @@ msgid "Templates"
 msgstr "Шаблони"
 
 #: navigation.py:16 navigation.py:36
-#: templates/netbox_labels/qrtemplate_design.html:109
+#: templates/netbox_labels/qrtemplate_design.html:122
 msgid "Add"
 msgstr "Додати"
 
@@ -259,8 +259,8 @@ msgstr "Спочатку виберіть хоча б один об'єкт."
 #: templates/netbox_labels/inc/bulk_print_button.html:11
 msgid "Select rows below, then click to print all their labels in one batch."
 msgstr ""
-"Виберіть рядки нижче, потім натисніть, щоб надрукувати всі їхні бірки "
-"одним пакетом."
+"Виберіть рядки нижче, потім натисніть, щоб надрукувати всі їхні бірки одним "
+"пакетом."
 
 #: templates/netbox_labels/inc/bulk_print_button.html:13
 #: templates/netbox_labels/qrtemplate_bulk_print.html:5
@@ -271,53 +271,54 @@ msgstr "Масовий друк бірок"
 
 #: templates/netbox_labels/inc/object_qr_panel.html:29
 #: templates/netbox_labels/qrtemplate_bulk_print_sheet.html:86
-#: templates/netbox_labels/render.html:112
+#: templates/netbox_labels/render.html:136
 msgid "Print"
 msgstr "Друк"
 
 #: templates/netbox_labels/inc/object_qr_panel.html:39
-#: templates/netbox_labels/inc/object_qr_panel.html:53
+#: templates/netbox_labels/inc/object_qr_panel.html:55
 #: templates/netbox_labels/qrtemplate_bulk_print.html:75
 #: templates/netbox_labels/qrtemplate_bulk_print.html:112
-#: templates/netbox_labels/render.html:114
-#: templates/netbox_labels/render.html:120
+#: templates/netbox_labels/render.html:138
+#: templates/netbox_labels/render.html:146
 msgid "Print via…"
 msgstr "Друк за допомогою…"
 
-#: templates/netbox_labels/inc/object_qr_panel.html:54
+#: templates/netbox_labels/inc/object_qr_panel.html:56
+#: templates/netbox_labels/inc/object_qr_panel.html:113
 #: templates/netbox_labels/qrtemplate_bulk_print.html:113
-#: templates/netbox_labels/qrtemplate_design.html:160
-#: templates/netbox_labels/qrtemplate_design.html:212
+#: templates/netbox_labels/qrtemplate_design.html:178
+#: templates/netbox_labels/qrtemplate_design.html:245
 msgid "Close"
 msgstr "Закрити"
 
-#: templates/netbox_labels/inc/object_qr_panel.html:58
+#: templates/netbox_labels/inc/object_qr_panel.html:60
 #: templates/netbox_labels/qrtemplate_bulk_print.html:122
-#: templates/netbox_labels/render.html:122
+#: templates/netbox_labels/render.html:148
 msgid "Niimbot (Bluetooth)"
 msgstr "Niimbot (Bluetooth)"
 
-#: templates/netbox_labels/inc/object_qr_panel.html:61
+#: templates/netbox_labels/inc/object_qr_panel.html:63
 #: templates/netbox_labels/qrtemplate_bulk_print.html:125
-#: templates/netbox_labels/render.html:123
+#: templates/netbox_labels/render.html:149
 msgid "Niimbot (USB)"
 msgstr "Niimbot (USB)"
 
-#: templates/netbox_labels/inc/object_qr_panel.html:64
+#: templates/netbox_labels/inc/object_qr_panel.html:66
 #: templates/netbox_labels/qrtemplate_bulk_print.html:128
-#: templates/netbox_labels/render.html:124
+#: templates/netbox_labels/render.html:150
 msgid "Zebra — ZPL (USB)"
 msgstr "Zebra — ZPL (USB)"
 
-#: templates/netbox_labels/inc/object_qr_panel.html:67
+#: templates/netbox_labels/inc/object_qr_panel.html:69
 #: templates/netbox_labels/qrtemplate_bulk_print.html:131
-#: templates/netbox_labels/render.html:125
+#: templates/netbox_labels/render.html:151
 msgid "Generic — ESC/POS (USB)"
 msgstr "Звичайний — ESC/POS (USB)"
 
-#: templates/netbox_labels/inc/object_qr_panel.html:72
+#: templates/netbox_labels/inc/object_qr_panel.html:74
 #: templates/netbox_labels/qrtemplate_bulk_print.html:148
-#: templates/netbox_labels/render.html:128
+#: templates/netbox_labels/render.html:154
 msgid "Report a bug / request device support"
 msgstr "Повідомити про помилку / запросити підтримку пристрою"
 
@@ -390,8 +391,8 @@ msgid "No active templates apply to this object type."
 msgstr "Жоден активний шаблон не застосовується до цього типу об'єкта."
 
 #: templates/netbox_labels/qrtemplate_bulk_print.html:58
-#: templates/netbox_labels/qrtemplate_design.html:122
-#: templates/netbox_labels/qrtemplate_design.html:159
+#: templates/netbox_labels/qrtemplate_design.html:135
+#: templates/netbox_labels/qrtemplate_design.html:177
 msgid "Preview"
 msgstr "Попередній перегляд"
 
@@ -468,106 +469,127 @@ msgstr[3] ""
 "шаблону і їх пропущено:\n"
 "    "
 
-#: templates/netbox_labels/qrtemplate_design.html:48
+#: templates/netbox_labels/qrtemplate_design.html:55
 msgid "Undo"
 msgstr "Відмінити"
 
-#: templates/netbox_labels/qrtemplate_design.html:51
+#: templates/netbox_labels/qrtemplate_design.html:58
 msgid "Redo"
 msgstr "Повторити"
 
-#: templates/netbox_labels/qrtemplate_design.html:57
+#: templates/netbox_labels/qrtemplate_design.html:64
 msgid "Zoom out"
 msgstr "Зменшити"
 
-#: templates/netbox_labels/qrtemplate_design.html:60
+#: templates/netbox_labels/qrtemplate_design.html:67
 msgid "Reset zoom"
 msgstr "Скинути масштаб"
 
-#: templates/netbox_labels/qrtemplate_design.html:63
+#: templates/netbox_labels/qrtemplate_design.html:70
 msgid "Zoom in"
 msgstr "Збільшити"
 
-#: templates/netbox_labels/qrtemplate_design.html:69
+#: templates/netbox_labels/qrtemplate_design.html:76
 msgid "Toggle grid / snap"
 msgstr ""
 
-#: templates/netbox_labels/qrtemplate_design.html:72
+#: templates/netbox_labels/qrtemplate_design.html:79
 msgid "Grid size"
 msgstr ""
 
-#: templates/netbox_labels/qrtemplate_design.html:89
+#: templates/netbox_labels/qrtemplate_design.html:91
+msgid "Toggle rulers"
+msgstr "Перемкнути лінійки"
+
+#: templates/netbox_labels/qrtemplate_design.html:102
 msgid "Width"
 msgstr "Ширина"
 
-#: templates/netbox_labels/qrtemplate_design.html:90
+#: templates/netbox_labels/qrtemplate_design.html:103
 msgid "Height"
 msgstr "Висота"
 
-#: templates/netbox_labels/qrtemplate_design.html:98
+#: templates/netbox_labels/qrtemplate_design.html:111
 msgid "No presets defined."
 msgstr "Пресети не визначені."
 
-#: templates/netbox_labels/qrtemplate_design.html:102
+#: templates/netbox_labels/qrtemplate_design.html:115
 msgid "Manage presets…"
 msgstr "Керувати пресетами…"
 
-#: templates/netbox_labels/qrtemplate_design.html:112
+#: templates/netbox_labels/qrtemplate_design.html:125
 msgid "Text"
 msgstr "Текст"
 
-#: templates/netbox_labels/qrtemplate_design.html:113
+#: templates/netbox_labels/qrtemplate_design.html:126
 msgid "Image"
 msgstr "Зображення"
 
-#: templates/netbox_labels/qrtemplate_design.html:115
+#: templates/netbox_labels/qrtemplate_design.html:128
 msgid "Barcode"
 msgstr ""
 
-#: templates/netbox_labels/qrtemplate_design.html:116
+#: templates/netbox_labels/qrtemplate_design.html:129
 msgid "Icon"
 msgstr ""
 
-#: templates/netbox_labels/qrtemplate_design.html:125
+#: templates/netbox_labels/qrtemplate_design.html:138
 #: templates/netbox_labels/settings.html:46
 msgid "Save"
 msgstr "Зберегти"
 
-#: templates/netbox_labels/qrtemplate_design.html:139
+#: templates/netbox_labels/qrtemplate_design.html:157
 msgid "Properties"
 msgstr "Властивості"
 
-#: templates/netbox_labels/qrtemplate_design.html:141
+#: templates/netbox_labels/qrtemplate_design.html:159
 msgid "Select an element to edit its properties."
 msgstr "Виберіть елемент для редагування його властивостей."
 
-#: templates/netbox_labels/qrtemplate_design.html:167
+#: templates/netbox_labels/qrtemplate_design.html:185
 msgid "Placeholder"
 msgstr "Заповнювач"
 
-#: templates/netbox_labels/qrtemplate_design.html:170
+#: templates/netbox_labels/qrtemplate_design.html:188
 msgid "Real object"
 msgstr "Реальний об'єкт"
 
-#: templates/netbox_labels/qrtemplate_design.html:179
+#: templates/netbox_labels/qrtemplate_design.html:197
 msgid "Search…"
 msgstr "Пошук…"
 
-#: templates/netbox_labels/qrtemplate_design.html:193
+#: templates/netbox_labels/qrtemplate_design.html:211
 msgid "Object data (debug)"
 msgstr "Дані об'єкта (налагодження)"
 
-#: templates/netbox_labels/qrtemplate_design.html:211
+#: templates/netbox_labels/qrtemplate_design.html:216
+#, python-brace-format
+msgid ""
+"This is <code>object_data</code>, not <code>object</code> — the object "
+"serialized the same way NetBox's REST API would return it, used by <code>$"
+"{expr}</code> placeholders and custom Jinja2 expressions. It's a different "
+"shape than <code>object</code> (the raw model instance): a choice field like "
+"<code>object_data.profile.label</code> works here, while the equivalent on "
+"<code>object</code> would just be its bare stored value."
+msgstr ""
+
+#: templates/netbox_labels/qrtemplate_design.html:226
+#, fuzzy
+#| msgid "View documentation"
+msgid "Documentation"
+msgstr "Переглянути документацію"
+
+#: templates/netbox_labels/qrtemplate_design.html:244
 msgid "Insert icon"
 msgstr ""
 
-#: templates/netbox_labels/qrtemplate_design.html:215
+#: templates/netbox_labels/qrtemplate_design.html:248
 #, fuzzy
 #| msgid "Search…"
 msgid "Search icons…"
 msgstr "Пошук…"
 
-#: templates/netbox_labels/qrtemplate_design.html:217
+#: templates/netbox_labels/qrtemplate_design.html:250
 msgid "Narrow your search to see more results."
 msgstr ""
 
@@ -583,7 +605,11 @@ msgstr ""
 msgid "Design visually"
 msgstr "Візуальний дизайн"
 
-#: templates/netbox_labels/render.html:163
+#: templates/netbox_labels/render.html:185
+msgid "Dismiss"
+msgstr "Закрити"
+
+#: templates/netbox_labels/render.html:213
 msgid "Template error"
 msgstr "Помилка шаблону"
 
