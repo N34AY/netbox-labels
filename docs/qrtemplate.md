@@ -199,7 +199,7 @@ entirely. Four drivers are supported:
 
 | Driver | Transport | Notes |
 | --- | --- | --- |
-| **Niimbot** | Bluetooth or USB | Uses the community [niimbluelib](https://github.com/MultiMote/niimbluelib) project, which auto-detects the correct protocol for the connected model. Covers essentially the full current Niimbot lineup (D11/D110, B1/B21 series, H1S, and dozens more) — see the library's `PrinterModel` enum for the exact list. It's a pinned/vendored snapshot, so brand-new models released after that snapshot won't be recognized until it's updated. |
+| **Niimbot** | Bluetooth or USB | Uses the community [niimbluelib](https://github.com/MultiMote/niimbluelib) project, which auto-detects the correct protocol for the connected model. Covers essentially the full current Niimbot lineup (D11/D110, B1/B21 series, H1S, and dozens more) — see the library's `PrinterModel` enum for the exact list. It's a pinned/vendored snapshot, so brand-new models released after that snapshot won't be recognized until it's updated. Any `height_mm`/`width_mm` is fine, including ones that don't rasterize to a pixel count divisible by 8 at the printer's DPI (e.g. 12.5mm) — the odd edge is padded with white rather than rejected. |
 | **Zebra — ZPL** | USB only | Generates [ZPL](https://en.wikipedia.org/wiki/Zebra_Programming_Language) (`^GFA` graphic field), the language spoken by Zebra's desktop/industrial printers (GC/GX/ZD/GK series and similar). |
 | **Generic — ESC/POS** | USB only | Generates a raw ESC/POS raster bit image (`GS v 0`) — the de-facto standard spoken by most unbranded Bluetooth/USB thermal label printers. |
 
@@ -216,8 +216,11 @@ classic Bluetooth (SPP), which the
 reach at all from a browser — it only speaks Bluetooth Low Energy (GATT). Niimbot printers use
 BLE, so Bluetooth works for that driver specifically.
 
-Progress and errors are logged to the browser console, prefixed `[NetBoxQR/Niimbot]`,
-`[NetBoxQR/ZPL]`, or `[NetBoxQR/ESC-POS]` depending on the driver used.
+Progress is logged to the browser console, prefixed `[NetBoxQR/Niimbot]`, `[NetBoxQR/ZPL]`, or
+`[NetBoxQR/ESC-POS]` depending on the driver used. A failure (device rejected the connection, an
+unsupported label size, etc.) also surfaces as an on-page toast — including when printing from a
+small embedded panel (e.g. an object detail page), where the toast is shown on that page itself
+rather than in the tiny iframe.
 
 Printer not listed, or a driver not working for your model? Use the **Report a bug / request
 device support** link in the same picker.
