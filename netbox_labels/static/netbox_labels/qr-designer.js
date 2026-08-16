@@ -819,10 +819,15 @@
 				));
 				rows.push(field(_('Color'), colorInput('color', el.color || '#000000')));
 			} else if (el.type === 'qr') {
-				rows.push(field(_('Error correction'), selectInput('correct_level', el.correct_level || 'H', [
-					['L', 'L (' + _('least redundant, smallest modules') + ')'],
-					['M', 'M'], ['Q', 'Q'], ['H', 'H (' + _('most redundant') + ')'],
-				])));
+				rows.push(field(
+					_('Error correction'),
+					selectInput('correct_level', el.correct_level || 'H', [
+						['auto', _('Auto (recommended)')],
+						['L', 'L (' + _('least redundant, smallest modules') + ')'],
+						['M', 'M'], ['Q', 'Q'], ['H', 'H (' + _('most redundant') + ')'],
+					]),
+					_('Picks the most damage-resistant level that fits the encoded value without enlarging the code beyond what L alone would need.')
+				));
 				rows.push(field(_('Color'), colorInput('color', el.color || '#000000')));
 			} else {
 				rows.push(field(_('Font size (mm)'), numberInput('font_size_mm', el.font_size_mm || 3)));
@@ -1052,7 +1057,7 @@
 		var el = {
 			id: uid('qr'), type: 'qr',
 			x_mm: 1, y_mm: 1, width_mm: size, height_mm: size,
-			correct_level: 'L', binding: 'object_url', color: '#000000',
+			correct_level: 'auto', binding: 'object_url', color: '#000000',
 		};
 		elements.push(el);
 		selectElement(el.id);

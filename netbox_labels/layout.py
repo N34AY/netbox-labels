@@ -28,7 +28,7 @@ Layout shape:
             "text_transform": "none" | "uppercase" | "lowercase" | "capitalize",
             "letter_spacing_mm": float,
             # qr only:
-            "correct_level": "L" | "M" | "Q" | "H",
+            "correct_level": "L" | "M" | "Q" | "H" | "auto",
             # A qr element with no "binding" key at all (only ever true of
             # elements saved before per-element bindings existed) keeps its
             # original behavior: falling back to the template-wide qr_value
@@ -141,7 +141,12 @@ def _element_style(element):
 
 def _render_qr_element(element):
     correct_level = element.get('correct_level') or 'H'
-    if correct_level not in ('L', 'M', 'Q', 'H'):
+    # 'auto' is resolved client-side (qr-render.js), per the actual rendered
+    # value's length — picks the strongest level that doesn't need a bigger
+    # QR version than the weakest (L) alone would, so short values get extra
+    # damage-resilience for free without ever making the code denser/harder
+    # to scan than always using L would.
+    if correct_level not in ('L', 'M', 'Q', 'H', 'auto'):
         correct_level = 'H'
     style = _element_style(element) + 'background:#fff;'
     # Like _render_barcode_element, the bound value is embedded as the div's

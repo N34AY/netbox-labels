@@ -315,6 +315,15 @@ describe('selection and properties panel', () => {
     expect(properties.querySelector('[data-prop="font_size_mm"]')).toBeNull();
   });
 
+  test('the qr element\'s error correction select offers Auto alongside the fixed L/M/Q/H levels', () => {
+    loadDesigner({ elements: [QR_EL] });
+    mousedown(qrEls()[0], 0, 0);
+    mouseup();
+
+    const options = els().properties.querySelector('[data-prop="correct_level"]').options;
+    expect(Array.from(options).map((o) => o.value)).toEqual(['auto', 'L', 'M', 'Q', 'H']);
+  });
+
   test('a qr element with no color of its own shows black as the default', () => {
     loadDesigner({ elements: [QR_EL] });
     mousedown(qrEls()[0], 0, 0);
@@ -364,13 +373,14 @@ describe('add / delete elements', () => {
     expect(qrEls()).toHaveLength(0);
   });
 
-  test('adding a qr element defaults its binding to Object URL and its color to black', () => {
+  test('adding a qr element defaults its binding to Object URL, its color to black, and error correction to Auto', () => {
     loadDesigner({ elements: [] });
     els().addQr.click();
 
     expect(qrEls()).toHaveLength(1);
     expect(els().properties.querySelector('[data-prop="binding"]').value).toBe('object_url');
     expect(els().properties.querySelector('[data-prop="color"]').value).toBe('#000000');
+    expect(els().properties.querySelector('[data-prop="correct_level"]').value).toBe('auto');
   });
 
   test('adding a barcode element appends it with CODE128/object URL defaults, selects it, and enables undo', () => {

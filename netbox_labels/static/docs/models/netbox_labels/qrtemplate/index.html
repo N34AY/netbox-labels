@@ -506,6 +506,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#visual-designer-qr-error-correction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Visual designer: QR error correction
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#where-templates-appear" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -792,6 +803,17 @@
     <span class="md-ellipsis">
       
         Visual designer: barcode formats
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#visual-designer-qr-error-correction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Visual designer: QR error correction
       
     </span>
   </a>
@@ -1116,6 +1138,23 @@ whose value it can actually check up front:</p>
   is left blank and the mismatch is only logged to the browser console, prefixed
   <code>[NetBoxQR/Barcode]</code>.</li>
 </ul>
+<h2 id="visual-designer-qr-error-correction">Visual designer: QR error correction</h2>
+<p>A QR code's error correction level (<code>L</code>/<code>M</code>/<code>Q</code>/<code>H</code>) trades off two things that both matter for a
+small printed label: a higher level survives more physical damage (scratches, dirt, fading)
+before becoming unreadable, but for the same encoded value it also needs more modules — a denser,
+finer-grained code that's harder to print cleanly on a low-DPI thermal printer and harder to scan
+reliably in the first place. Neither extreme is right for every label; it depends on how much data
+you're encoding relative to how much spare capacity that leaves at each level.</p>
+<p>A <strong>qr</strong> element's <strong>Error correction</strong> field defaults to <strong>Auto</strong>, which resolves this per
+printed object rather than picking one fixed level for every instance of the template: at render
+time (client-side, in <code>qr-render.js</code>), it picks the strongest level that doesn't need a bigger QR
+version than the weakest level (<code>L</code>) alone would require for that object's actual encoded value. A
+short value (e.g. a short URL) often fits the same version at every level, so <strong>Auto</strong> gets the
+extra damage-resistance for free; a long value that only fits at <code>L</code> keeps using <code>L</code>, rather than
+growing into a denser grid — so a label is never <em>more</em> fragile-to-print than always using <code>L</code>
+would be, only ever equal or better. Pick a fixed level instead if you specifically need every
+printed instance of a template at the same, predictable correction level regardless of content
+length.</p>
 <h2 id="where-templates-appear">Where templates appear</h2>
 <ul>
 <li>A "Labels" panel on the detail page of every object type the template applies to, showing a
