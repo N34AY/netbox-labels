@@ -1202,6 +1202,13 @@ growing into a denser grid — so a label is never <em>more</em> fragile-to-prin
 would be, only ever equal or better. Pick a fixed level instead if you specifically need every
 printed instance of a template at the same, predictable correction level regardless of content
 length.</p>
+<p><strong>Labels → Settings</strong> also has a plugin-wide <strong>QR code error correction level</strong> field. Left at
+<strong>Auto</strong> (the default), it changes nothing — every template/element's own setting (including its
+own <strong>Auto</strong>, as above) is used as configured. Set it to a fixed level instead, and it overrides
+<em>every</em> QR code the plugin renders, everywhere — regardless of what an individual template or
+element specifies, including hand-typed <code>data-correct-level</code> attributes in a manually-written
+<strong>HTML</strong> field. Use this when you need one predictable level across the whole install (e.g. always
+<code>H</code> for labels that see rough handling) rather than deciding it per template.</p>
 <h2 id="where-templates-appear">Where templates appear</h2>
 <ul>
 <li>A "Labels" panel on the detail page of every object type the template applies to, showing a

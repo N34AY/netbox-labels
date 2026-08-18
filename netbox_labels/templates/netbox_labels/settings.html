@@ -49,6 +49,15 @@
           <div class="form-text text-muted">{{ form.custom_object_url.help_text }}</div>
         {% endif %}
       </div>
+      <div class="mb-3 mt-3">
+        <label class="form-label" for="{{ form.default_correct_level.id_for_label }}">
+          {{ form.default_correct_level.label }}
+        </label>
+        {{ form.default_correct_level }}
+        {% if form.default_correct_level.help_text %}
+          <div class="form-text text-muted">{{ form.default_correct_level.help_text }}</div>
+        {% endif %}
+      </div>
     </div>
   </div>
   <div class="mt-3">

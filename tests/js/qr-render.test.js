@@ -62,6 +62,53 @@ describe('window.NetBoxQR population', () => {
     loadRenderScript(jsonScript('netbox-qr-meta', { value: 'x' }) + jsonScript('netbox-qr-object-data', { name: 'Site 1' }));
     expect(window.NetBoxQR.objectData).toEqual({ name: 'Site 1' });
   });
+
+  test('reads globalCorrectLevel (QRSettings.default_correct_level) uppercased', () => {
+    loadRenderScript(jsonScript('netbox-qr-meta', { value: 'x', globalCorrectLevel: 'h' }));
+    expect(window.NetBoxQR.globalCorrectLevel).toBe('H');
+  });
+
+  test('globalCorrectLevel defaults to "AUTO" (no override) when absent from the meta tag', () => {
+    loadRenderScript(jsonScript('netbox-qr-meta', { value: 'x' }));
+    expect(window.NetBoxQR.globalCorrectLevel).toBe('AUTO');
+  });
+});
+
+describe('QRSettings.default_correct_level global override', () => {
+  test('a fixed global level overrides an element\'s own (different) fixed level', () => {
+    loadRenderScript(
+      jsonScript('netbox-qr-meta', { value: 'x', globalCorrectLevel: 'H' }) +
+      '<div data-netbox-qr data-correct-level="L"></div>'
+    );
+
+    expect(global.QRCode.mock.calls[0][1].correctLevel).toBe(2); // H, not L
+  });
+
+  test('a fixed global level overrides an element with no data-correct-level attribute at all, without probing for "auto"', () => {
+    loadRenderScript(jsonScript('netbox-qr-meta', { value: 'x', globalCorrectLevel: 'M' }) + '<div data-netbox-qr></div>');
+
+    expect(global.QRCode).toHaveBeenCalledTimes(1); // no auto-selection probe call
+    expect(global.QRCode.mock.calls[0][1].correctLevel).toBe(0); // M
+  });
+
+  test('a fixed global level overrides an element explicitly set to "auto"', () => {
+    loadRenderScript(
+      jsonScript('netbox-qr-meta', { value: 'x', globalCorrectLevel: 'Q' }) +
+      '<div data-netbox-qr data-correct-level="auto"></div>'
+    );
+
+    expect(global.QRCode).toHaveBeenCalledTimes(1); // no auto-selection probe call
+    expect(global.QRCode.mock.calls[0][1].correctLevel).toBe(3); // Q
+  });
+
+  test('"auto" (or an absent/blank) global setting leaves each element\'s own level untouched', () => {
+    loadRenderScript(
+      jsonScript('netbox-qr-meta', { value: 'x', globalCorrectLevel: 'auto' }) +
+      '<div data-netbox-qr data-correct-level="L"></div>'
+    );
+
+    expect(global.QRCode.mock.calls[0][1].correctLevel).toBe(1); // L, unchanged
+  });
 });
 
 describe('QR code rendering into [data-netbox-qr] elements', () => {

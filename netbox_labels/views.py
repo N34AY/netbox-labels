@@ -314,6 +314,7 @@ class QRTemplatePreviewView(LoginRequiredMixin, PermissionRequiredMixin, View):
             'objectType': None,
             'objectTypeId': None,
             'objectId': None,
+            'globalCorrectLevel': QRSettings.load().default_correct_level,
         }
         return render(request, 'netbox_labels/render.html', context)
 
@@ -349,8 +350,9 @@ class QRRenderView(LoginRequiredMixin, View):
                 'qr_value': '', 'body_html': '', 'css_code': qr_template.css_code, 'js_code': '',
                 'object_data': {}, 'object': instance, 'object_type': content_type,
             }
+        qr_settings = QRSettings.load()
         context['qr_template'] = qr_template
-        context['show_niimbot_button'] = QRSettings.load().show_niimbot_button
+        context['show_niimbot_button'] = qr_settings.show_niimbot_button
         # Opt-in via ?preview=1: reuses the same zoom-to-fit/centering treatment
         # built for the designer's preview dialog (see render.html) — for a
         # true-size embed (the object detail panel, or bulk-print's headless
@@ -363,6 +365,7 @@ class QRRenderView(LoginRequiredMixin, View):
             'objectType': f'{content_type.app_label}.{content_type.model}',
             'objectTypeId': content_type.pk,
             'objectId': instance.pk,
+            'globalCorrectLevel': qr_settings.default_correct_level,
         }
 
         return render(request, 'netbox_labels/render.html', context)
@@ -469,6 +472,7 @@ class QRBulkPrintSheetView(LoginRequiredMixin, View):
             'content_width_mm': _css_mm(content_width_mm),
             'label_width_mm': _css_mm(qr_template.width_mm),
             'label_height_mm': _css_mm(qr_template.height_mm),
+            'netbox_labels_meta': {'globalCorrectLevel': QRSettings.load().default_correct_level},
         })
 
 

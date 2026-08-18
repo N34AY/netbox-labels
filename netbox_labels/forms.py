@@ -84,11 +84,12 @@ class QRSizePresetFilterForm(NetBoxModelFilterSetForm):
 class QRSettingsForm(forms.ModelForm):
     class Meta:
         model = QRSettings
-        fields = ['show_niimbot_button', 'custom_object_url']
+        fields = ['show_niimbot_button', 'custom_object_url', 'default_correct_level']
         widgets = {
             'show_niimbot_button': forms.CheckboxInput(),
             'custom_object_url': forms.TextInput(attrs={
                 'class': 'form-control font-monospace',
                 'placeholder': "e.g. https://nb.example/{{ object_type.model }}/{{ object.pk }}/",
             }),
+            'default_correct_level': forms.Select(attrs={'class': 'form-select'}),
         }

@@ -19,6 +19,12 @@
 		objectTypeId: meta.objectTypeId || null,
 		objectId: meta.objectId || null,
 		objectData: readJSON('netbox-qr-object-data'),
+		// QRSettings.default_correct_level, plugin-wide (see Labels → Settings). 'auto' (or
+		// absent, e.g. a page — like the designer preview's debug reload — that predates this
+		// setting) means "no override": each element's own data-correct-level (or lack of one)
+		// decides, same as before this setting existed. A fixed level here instead overrides
+		// every QR code on the page below, regardless of what its own attribute says.
+		globalCorrectLevel: (meta.globalCorrectLevel || 'auto').toUpperCase(),
 	};
 
 	// Same red-on-white treatment as render.html's "Template error" banner
@@ -90,7 +96,9 @@
 	var errors = [];
 
 	document.querySelectorAll('[data-netbox-qr]').forEach(function (el) {
-		var correctLevelAttr = (el.getAttribute('data-correct-level') || 'AUTO').toUpperCase();
+		var correctLevelAttr = window.NetBoxQR.globalCorrectLevel !== 'AUTO'
+			? window.NetBoxQR.globalCorrectLevel
+			: (el.getAttribute('data-correct-level') || 'AUTO').toUpperCase();
 		// Read before clearing el below: a per-element binding (see
 		// layout.py's _render_qr_element) renders its value as el's own
 		// inner text, which takes priority over the page-global

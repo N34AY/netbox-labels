@@ -103,6 +103,7 @@
   {% endfor %}
 </div>
 
+{{ netbox_labels_meta|json_script:"netbox-qr-meta" }}
 <script src="{% static 'netbox_labels/qrcode.js' %}"></script>
 <script src="{% static 'netbox_labels/qr-render.js' %}"></script>
 </body>

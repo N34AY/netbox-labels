@@ -32,6 +32,9 @@ class QRSettingsSingletonTests(TestCase):
         self.assertEqual(settings.pk, 1)
         self.assertEqual(QRSettings.objects.count(), 1)
 
+    def test_default_correct_level_defaults_to_auto(self):
+        self.assertEqual(QRSettings.load().default_correct_level, 'auto')
+
     def test_load_returns_same_row_on_repeated_calls(self):
         first = QRSettings.load()
         first.show_niimbot_button = False

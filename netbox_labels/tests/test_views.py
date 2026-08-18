@@ -5,7 +5,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.test import RequestFactory, TestCase
 
 from dcim.models import Site
-from netbox_labels.models import QRTemplate
+from netbox_labels.models import QRSettings, QRTemplate
 from netbox_labels.views import _css_mm, _parse_dimension_mm, _redirect_back
 
 
@@ -89,6 +89,14 @@ class QRRenderViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(b'id="netbox-qr-root"', response.content)
         self.assertIn(b'Render Test Site', response.content)
+
+    def test_meta_carries_the_global_correct_level_setting(self):
+        settings = QRSettings.load()
+        settings.default_correct_level = 'H'
+        settings.save()
+        self.client.force_login(self.user)
+        response = self.client.get(self._url())
+        self.assertIn(b'"globalCorrectLevel": "H"', response.content)
 
     def test_404_for_template_not_applicable_to_content_type(self):
         device_ct = ContentType.objects.get(app_label='dcim', model='device')

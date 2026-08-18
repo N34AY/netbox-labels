@@ -144,6 +144,26 @@ class QRSettings(models.Model):
             'over Bluetooth or USB) on rendered labels.'
         ),
     )
+    CORRECT_LEVEL_CHOICES = [
+        ('auto', _('Auto (recommended) — let each template/element choose its own level')),
+        ('L', _('L — least redundant, smallest modules')),
+        ('M', 'M'),
+        ('Q', 'Q'),
+        ('H', _('H — most redundant, most damage-resistant')),
+    ]
+
+    default_correct_level = models.CharField(
+        max_length=4,
+        choices=CORRECT_LEVEL_CHOICES,
+        default='auto',
+        verbose_name=_('QR code error correction level'),
+        help_text=_(
+            '"Auto" leaves error correction up to each template/element (including its own '
+            'per-object Auto resolution, if that\'s what it uses). Choosing a fixed level here '
+            'instead overrides every QR code the plugin renders, regardless of what an '
+            'individual label template or visual-designer element specifies.'
+        ),
+    )
     custom_object_url = models.CharField(
         max_length=500,
         blank=True,
