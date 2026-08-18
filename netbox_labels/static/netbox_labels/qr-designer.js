@@ -821,7 +821,7 @@
 			} else if (el.type === 'qr') {
 				rows.push(field(
 					_('Error correction'),
-					selectInput('correct_level', el.correct_level || 'H', [
+					selectInput('correct_level', el.correct_level || 'auto', [
 						['auto', _('Auto (recommended)')],
 						['L', 'L (' + _('least redundant, smallest modules') + ')'],
 						['M', 'M'], ['Q', 'Q'], ['H', 'H (' + _('most redundant') + ')'],

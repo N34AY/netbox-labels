@@ -40,6 +40,15 @@
           <div class="form-text text-muted">{{ form.show_niimbot_button.help_text }}</div>
         {% endif %}
       </div>
+      <div class="mb-3 mt-3">
+        <label class="form-label" for="{{ form.custom_object_url.id_for_label }}">
+          {{ form.custom_object_url.label }}
+        </label>
+        {{ form.custom_object_url }}
+        {% if form.custom_object_url.help_text %}
+          <div class="form-text text-muted">{{ form.custom_object_url.help_text }}</div>
+        {% endif %}
+      </div>
     </div>
   </div>
   <div class="mt-3">

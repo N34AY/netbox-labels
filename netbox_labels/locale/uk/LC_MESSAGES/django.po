@@ -197,7 +197,28 @@ msgstr ""
 "Пропонувати прямий друк на принтер бірок (Niimbot, Zebra/ZPL або звичайний "
 "ESC/POS, через Bluetooth чи USB) на відрендерених бірках."
 
-#: models.py:149 models.py:150
+#: models.py:151
+msgid "custom object URL"
+msgstr "кастомний URL об'єкта"
+
+#: models.py:152
+msgid ""
+"Optional Jinja2 template overriding {{ object_url }} everywhere it is used "
+"— the default QR code value, and the \"Object URL\" binding in the visual "
+"designer. Available variables: object, object_type. Useful for pointing "
+"the QR code at a shorter external URL (e.g. a redirect/shortener domain), "
+"which reduces the amount of data encoded and makes the code easier to "
+"scan. Leave blank to use the object's absolute NetBox URL."
+msgstr ""
+"Необов'язковий шаблон Jinja2, що замінює {{ object_url }} усюди, де він "
+"використовується — типове значення QR-коду та прив'язку \"URL об'єкта\" у "
+"візуальному конструкторі. Доступні змінні: object, object_type. Корисно, "
+"щоб QR-код вказував на коротший зовнішній URL (наприклад, домен-"
+"скорочувач/редирект), що зменшує обсяг закодованих даних і полегшує "
+"сканування. Залиште порожнім, щоб використовувати справжній URL об'єкта в "
+"NetBox."
+
+#: models.py:163 models.py:164
 msgid "label settings"
 msgstr "налаштування бірок"
 

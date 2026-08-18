@@ -90,7 +90,7 @@
 	var errors = [];
 
 	document.querySelectorAll('[data-netbox-qr]').forEach(function (el) {
-		var correctLevelAttr = (el.getAttribute('data-correct-level') || 'H').toUpperCase();
+		var correctLevelAttr = (el.getAttribute('data-correct-level') || 'AUTO').toUpperCase();
 		// Read before clearing el below: a per-element binding (see
 		// layout.py's _render_qr_element) renders its value as el's own
 		// inner text, which takes priority over the page-global

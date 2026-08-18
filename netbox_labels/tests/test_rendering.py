@@ -5,7 +5,7 @@ from django.test import RequestFactory, TestCase
 
 from dcim.models import Site
 from netbox_labels import rendering
-from netbox_labels.models import QRTemplate
+from netbox_labels.models import QRSettings, QRTemplate
 
 
 def _request():
@@ -29,6 +29,39 @@ class BuildContextTests(TestCase):
     def test_includes_serialized_object_data(self):
         context = rendering.build_context(self.site, _request())
         self.assertEqual(context['object_data']['name'], 'Test Site')
+
+
+class CustomObjectUrlTests(TestCase):
+    """QRSettings.custom_object_url lets an admin swap the default absolute NetBox URL for a
+    shorter one (e.g. a redirect/shortener domain), to reduce QR code density."""
+
+    def setUp(self):
+        self.site = Site.objects.create(name='Test Site', slug='test-site')
+
+    def test_blank_setting_keeps_default_url(self):
+        context = rendering.build_context(self.site, _request())
+        self.assertIn(self.site.get_absolute_url(), context['object_url'])
+
+    def test_custom_template_overrides_object_url(self):
+        settings = QRSettings.load()
+        settings.custom_object_url = 'https://nb.example/{{ object_type.model }}/{{ object.pk }}/'
+        settings.save()
+        context = rendering.build_context(self.site, _request())
+        self.assertEqual(context['object_url'], f'https://nb.example/site/{self.site.pk}/')
+
+    def test_broken_template_falls_back_to_default_url(self):
+        settings = QRSettings.load()
+        settings.custom_object_url = '{{ 1/0 }}'
+        settings.save()
+        context = rendering.build_context(self.site, _request())
+        self.assertIn(self.site.get_absolute_url(), context['object_url'])
+
+    def test_applies_to_placeholder_context_too(self):
+        settings = QRSettings.load()
+        settings.custom_object_url = 'https://nb.example/{{ object_type.model }}/'
+        settings.save()
+        context = rendering.build_placeholder_context(_request())
+        self.assertEqual(context['object_url'], 'https://nb.example/object/')
 
 
 class RenderTemplateXSSTests(TestCase):

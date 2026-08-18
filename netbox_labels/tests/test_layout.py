@@ -129,10 +129,15 @@ class LayoutToHtmlTests(SimpleTestCase):
         self.assertNotIn('<script>', html)
         self.assertIn('&lt;script&gt;', html)
 
-    def test_qr_element_invalid_correct_level_falls_back_to_h(self):
+    def test_qr_element_invalid_correct_level_falls_back_to_auto(self):
         layout = {'elements': [{'id': 'q1', 'type': 'qr', 'correct_level': 'nonsense'}]}
         html = layout_to_html(layout)
-        self.assertIn('data-correct-level="H"', html)
+        self.assertIn('data-correct-level="auto"', html)
+
+    def test_qr_element_with_no_correct_level_defaults_to_auto(self):
+        layout = {'elements': [{'id': 'q1', 'type': 'qr'}]}
+        html = layout_to_html(layout)
+        self.assertIn('data-correct-level="auto"', html)
 
     def test_qr_element_with_no_binding_renders_no_inner_text(self):
         # Regression test: a qr element saved before per-element bindings
@@ -168,7 +173,7 @@ class LayoutToHtmlTests(SimpleTestCase):
             {'id': 'q1', 'type': 'qr', 'binding': 'custom', 'expr': 'object.get("x")'},
         ]}
         html = layout_to_html(layout)
-        self.assertIn('data-correct-level="H"', html)
+        self.assertIn('data-correct-level="auto"', html)
         opening_tag_end = html.index('>', html.index('<div data-netbox-qr'))
         self.assertIn('object.get("x")', html[opening_tag_end:])
 

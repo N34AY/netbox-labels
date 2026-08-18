@@ -144,6 +144,20 @@ class QRSettings(models.Model):
             'over Bluetooth or USB) on rendered labels.'
         ),
     )
+    custom_object_url = models.CharField(
+        max_length=500,
+        blank=True,
+        default='',
+        verbose_name=_('custom object URL'),
+        help_text=_(
+            'Optional Jinja2 template overriding {{ object_url }} everywhere it is used — the '
+            'default QR code value, and the "Object URL" binding in the visual designer. '
+            'Available variables: object, object_type. Useful for pointing the QR code at a '
+            'shorter external URL (e.g. a redirect/shortener domain), which reduces the amount '
+            'of data encoded and makes the code easier to scan. Leave blank to use the object\'s '
+            'absolute NetBox URL.'
+        ),
+    )
 
     class Meta:
         verbose_name = _('label settings')

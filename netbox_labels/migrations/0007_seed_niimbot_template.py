@@ -4,7 +4,7 @@ SLUG = 'niimbot-d110-label'
 
 HTML_CODE = (
     '<div style="position:relative;width:40.0mm;height:12.0mm;overflow:hidden;background:#ffffff;">'
-    '<div data-netbox-qr data-width="300" data-height="300" data-correct-level="L" '
+    '<div data-netbox-qr data-width="300" data-height="300" data-correct-level="auto" '
     'style="position:absolute;left:0.6mm;top:0.6mm;width:10.5mm;height:10.5mm;background:#fff;"></div>'
     '<div style="position:absolute;left:12.0mm;top:1.0mm;width:27.0mm;height:4.0mm;font-size:2.1mm;'
     'font-weight:normal;color:#333333;text-align:left;text-transform:uppercase;letter-spacing:0.1mm;'
@@ -23,7 +23,7 @@ LAYOUT = {
         {
             'id': 'qr-1', 'type': 'qr',
             'x_mm': 0.6, 'y_mm': 0.6, 'width_mm': 10.5, 'height_mm': 10.5,
-            'correct_level': 'L',
+            'correct_level': 'auto',
         },
         {
             'id': 'text-1', 'type': 'text',

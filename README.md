@@ -104,7 +104,9 @@ Templates are Jinja2 + HTML. When rendered for a specific object, the following 
 - In the `HTML` and `QR code value` fields (Jinja2):
   - `{{ object }}` — the model instance (e.g. a `Device`)
   - `{{ object_type }}` — its `ContentType`
-  - `{{ object_url }}` — absolute URL to the object's NetBox detail page
+  - `{{ object_url }}` — absolute URL to the object's NetBox detail page, or the **Custom object
+    URL** template configured under **Labels → Settings**, if set (e.g. to point QR codes at a
+    shorter external URL and ease scanning)
   - `{{ object_data }}` — the object serialized the same way the REST API would
 - In JavaScript, once the page loads:
   - `window.NetBoxQR.value` — the rendered QR code value

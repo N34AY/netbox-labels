@@ -442,6 +442,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Jinja2 context">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#custom-object-url" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Custom object URL
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -746,6 +763,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Jinja2 context">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#custom-object-url" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Custom object URL
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -929,7 +963,7 @@ itself should appear — it's filled in automatically by the bundled QR library.
 </tr>
 <tr>
 <td><code>object_url</code></td>
-<td>Absolute URL to the object's NetBox detail page.</td>
+<td>Absolute URL to the object's NetBox detail page — or, if <strong>Custom object URL</strong> is set under <strong>Labels → Settings</strong>, that Jinja2 template's rendered output instead (e.g. a shorter external redirect/shortener URL, to reduce QR code density).</td>
 </tr>
 <tr>
 <td><code>object_data</code></td>
@@ -937,6 +971,19 @@ itself should appear — it's filled in automatically by the bundled QR library.
 </tr>
 </tbody>
 </table>
+<h3 id="custom-object-url">Custom object URL</h3>
+<p><strong>Labels → Settings</strong> has a plugin-wide <strong>Custom object URL</strong> field: an optional Jinja2 template
+(with <code>object</code> and <code>object_type</code> available, same as above) that replaces <code>object_url</code> everywhere
+it's used — the default <strong>QR code value</strong>, and the visual designer's <strong>Object URL</strong> binding —
+without having to change every template individually.</p>
+<p>The default <code>object_url</code> is the object's full absolute NetBox URL (e.g.
+<code>https://netbox.example.com/dcim/devices/21/</code>), which can push a QR code to a higher module count
+than a small printed label scans reliably. Pointing this setting at a shorter external URL
+instead — e.g. a redirect/shortener domain your infrastructure resolves back to the object, such
+as <code>https://nb.example/{{ object_type.model }}/{{ object.pk }}/</code> — encodes less data and produces
+a simpler, easier-to-scan code. Leave it blank to keep using the object's real NetBox URL. A
+template that fails to render (bad syntax, a broken expression) falls back to the default URL
+rather than breaking the label.</p>
 <h2 id="javascript-api">JavaScript API</h2>
 <p>Available once the page has loaded:</p>
 <table>
@@ -993,8 +1040,8 @@ attributes on that element:</p>
 </tr>
 <tr>
 <td><code>data-correct-level</code></td>
-<td><code>H</code></td>
-<td>Error-correction level (<code>L</code>/<code>M</code>/<code>Q</code>/<code>H</code>). Lower levels need fewer modules for the same data — useful for keeping small physical labels scannable.</td>
+<td><code>auto</code></td>
+<td>Error-correction level (<code>L</code>/<code>M</code>/<code>Q</code>/<code>H</code>, or <code>auto</code>). Lower fixed levels need fewer modules for the same data — useful for keeping small physical labels scannable. <code>auto</code> (the default — see <a href="#visual-designer-qr-error-correction">Visual designer: QR error correction</a> below) picks the strongest level that doesn't need a bigger code than <code>L</code> alone would.</td>
 </tr>
 </tbody>
 </table>
@@ -1015,7 +1062,7 @@ controlling what data it shows or encodes:</p>
 </tr>
 <tr>
 <td>Object URL</td>
-<td><code>{{ object_url }}</code> — its absolute NetBox detail page URL.</td>
+<td><code>{{ object_url }}</code> — its absolute NetBox detail page URL (or the <strong>Custom object URL</strong> override — see above).</td>
 </tr>
 <tr>
 <td>Object type</td>

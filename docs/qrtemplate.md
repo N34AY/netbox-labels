@@ -68,8 +68,24 @@ Available in the **HTML** and **QR code value** fields:
 | --- | --- |
 | `object` | The model instance being rendered (e.g. a `Device` or `Cable`). Use `{{ object }}` for its display string — this works for every object type, unlike `{{ object.name }}`, which some models (like Cable) don't have. |
 | `object_type` | The object's `ContentType` (e.g. `{{ object_type.model }}` gives `"device"`). |
-| `object_url` | Absolute URL to the object's NetBox detail page. |
+| `object_url` | Absolute URL to the object's NetBox detail page — or, if **Custom object URL** is set under **Labels → Settings**, that Jinja2 template's rendered output instead (e.g. a shorter external redirect/shortener URL, to reduce QR code density). |
 | `object_data` | The object serialized the same way the REST API would return it. |
+
+### Custom object URL
+
+**Labels → Settings** has a plugin-wide **Custom object URL** field: an optional Jinja2 template
+(with `object` and `object_type` available, same as above) that replaces `object_url` everywhere
+it's used — the default **QR code value**, and the visual designer's **Object URL** binding —
+without having to change every template individually.
+
+The default `object_url` is the object's full absolute NetBox URL (e.g.
+`https://netbox.example.com/dcim/devices/21/`), which can push a QR code to a higher module count
+than a small printed label scans reliably. Pointing this setting at a shorter external URL
+instead — e.g. a redirect/shortener domain your infrastructure resolves back to the object, such
+as `https://nb.example/{{ object_type.model }}/{{ object.pk }}/` — encodes less data and produces
+a simpler, easier-to-scan code. Leave it blank to keep using the object's real NetBox URL. A
+template that fails to render (bad syntax, a broken expression) falls back to the default URL
+rather than breaking the label.
 
 ## JavaScript API
 
@@ -90,7 +106,7 @@ attributes on that element:
 | `data-value` | `NetBoxQR.value` | Override what this specific code encodes. |
 | `data-width` / `data-height` | `200` | Canvas size in pixels. For print labels, render at a higher resolution than the CSS box (e.g. matching the printer's DPI) and let CSS scale it down — see the bundled "Niimbot D110 Label" template. |
 | `data-color-dark` / `data-color-light` | `#000000` / `#ffffff` | QR module colors. |
-| `data-correct-level` | `H` | Error-correction level (`L`/`M`/`Q`/`H`). Lower levels need fewer modules for the same data — useful for keeping small physical labels scannable. |
+| `data-correct-level` | `auto` | Error-correction level (`L`/`M`/`Q`/`H`, or `auto`). Lower fixed levels need fewer modules for the same data — useful for keeping small physical labels scannable. `auto` (the default — see [Visual designer: QR error correction](#visual-designer-qr-error-correction) below) picks the strongest level that doesn't need a bigger code than `L` alone would. |
 
 ## Visual designer: content bindings
 
@@ -100,7 +116,7 @@ controlling what data it shows or encodes:
 | Binding | Renders |
 | --- | --- |
 | Object name | `{{ object }}` — the object's display string. |
-| Object URL | `{{ object_url }}` — its absolute NetBox detail page URL. |
+| Object URL | `{{ object_url }}` — its absolute NetBox detail page URL (or the **Custom object URL** override — see above). |
 | Object type | `{{ object_type.model }}`, e.g. `"device"`. |
 | Static text | Whatever you typed, unchanged. |
 | Formatted text | Literal text with `${expr}` placeholders mixed in — see below. |

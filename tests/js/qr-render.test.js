@@ -16,6 +16,19 @@ function loadRenderScript(bodyHtml) {
   require(SCRIPT_PATH);
 }
 
+// The real vendored QRCode() exposes the resulting module count via
+// `this._oQRCode.getModuleCount()` (see qrcode.js's makeCode/Drawing) — this
+// mock reproduces just that shape, keyed by the numeric correctLevel value
+// each candidate probe is called with, so "auto" selection can be tested
+// against controlled scenarios without needing real QR capacity math.
+function mockQRCodeWithModuleCounts(moduleCountByLevel) {
+  const mock = jest.fn(function (el, opts) {
+    this._oQRCode = { getModuleCount: () => moduleCountByLevel[opts.correctLevel] };
+  });
+  mock.CorrectLevel = { L: 1, M: 0, Q: 3, H: 2 };
+  return mock;
+}
+
 describe('window.NetBoxQR population', () => {
   test('reads value/objectType/objectId from the meta json_script tag', () => {
     loadRenderScript(jsonScript('netbox-qr-meta', {
@@ -52,13 +65,22 @@ describe('window.NetBoxQR population', () => {
 });
 
 describe('QR code rendering into [data-netbox-qr] elements', () => {
-  test('falls back to the global value and 200x200/black-on-white/H when attributes are absent', () => {
-    loadRenderScript(jsonScript('netbox-qr-meta', { value: 'GLOBAL-VALUE' }) + '<div data-netbox-qr></div>');
+  test('falls back to the global value, 200x200/black-on-white, and "auto" error correction when attributes are absent', () => {
+    // Equal module counts at every level means auto-selection lands on H
+    // (the first candidate checked) — same as an explicit data-correct-level="auto"
+    // would for a short value (see the "auto" describe block below); this just
+    // confirms an element with no data-correct-level attribute at all goes
+    // through that same auto-selection path, not a fixed level.
+    global.QRCode = mockQRCodeWithModuleCounts({ 2: 21, 3: 21, 0: 21, 1: 21 });
+    document.body.innerHTML = jsonScript('netbox-qr-meta', { value: 'GLOBAL-VALUE' }) + '<div data-netbox-qr></div>';
+    jest.resetModules();
+    delete window.NetBoxQR;
+    require(SCRIPT_PATH);
 
-    expect(global.QRCode).toHaveBeenCalledTimes(1);
-    const [el, opts] = global.QRCode.mock.calls[0];
-    expect(el.getAttribute('data-netbox-qr')).toBe('');
-    expect(opts).toEqual({
+    const realEl = document.querySelector('[data-netbox-qr]');
+    expect(realEl.getAttribute('data-netbox-qr')).toBe('');
+    const realCall = global.QRCode.mock.calls.find((call) => call[0] === realEl);
+    expect(realCall[1]).toEqual({
       text: 'GLOBAL-VALUE',
       width: 200,
       height: 200,
@@ -110,20 +132,6 @@ describe('QR code rendering into [data-netbox-qr] elements', () => {
   });
 
   describe('"auto" error correction level', () => {
-    // The real vendored QRCode() exposes the resulting module count via
-    // `this._oQRCode.getModuleCount()` (see qrcode.js's makeCode/Drawing) —
-    // this mock reproduces just that shape, keyed by the numeric
-    // correctLevel value each candidate probe is called with, so the
-    // selection algorithm can be tested against controlled scenarios without
-    // needing real QR capacity math.
-    function mockQRCodeWithModuleCounts(moduleCountByLevel) {
-      const mock = jest.fn(function (el, opts) {
-        this._oQRCode = { getModuleCount: () => moduleCountByLevel[opts.correctLevel] };
-      });
-      mock.CorrectLevel = { L: 1, M: 0, Q: 3, H: 2 };
-      return mock;
-    }
-
     function loadWithAutoLevel(moduleCountByLevel, text) {
       global.QRCode = mockQRCodeWithModuleCounts(moduleCountByLevel);
       document.body.innerHTML = jsonScript('netbox-qr-meta', { value: 'x' }) +
@@ -213,17 +221,23 @@ describe('QR code rendering into [data-netbox-qr] elements', () => {
   });
 
   test('renders one QR code per matching element on the page', () => {
+    // Pinned to a fixed level (rather than the "auto" default) so this test's
+    // call count reflects one real draw per element, undisturbed by auto's
+    // own extra probe-only QRCode() calls (covered separately above).
     loadRenderScript(
       jsonScript('netbox-qr-meta', { value: 'x' }) +
-      '<div data-netbox-qr></div><div data-netbox-qr></div><div></div>'
+      '<div data-netbox-qr data-correct-level="H"></div><div data-netbox-qr data-correct-level="H"></div><div></div>'
     );
 
     expect(global.QRCode).toHaveBeenCalledTimes(2);
   });
 
   test('a thrown error from one element is caught, shown as a placeholder, and does not stop the others from drawing', () => {
+    // Pinned to a fixed level so the mock's one-shot throw lands on the real
+    // render call being tested here, not on auto's own preceding probe call.
     jest.spyOn(console, 'error').mockImplementation(() => {});
-    document.body.innerHTML = jsonScript('netbox-qr-meta', { value: 'x' }) + '<div data-netbox-qr>bad</div><div data-netbox-qr>222</div>';
+    document.body.innerHTML = jsonScript('netbox-qr-meta', { value: 'x' }) +
+      '<div data-netbox-qr data-correct-level="H">bad</div><div data-netbox-qr data-correct-level="H">222</div>';
     global.QRCode = jest.fn().mockImplementationOnce(() => {
       throw new Error('bad value');
     });
@@ -242,8 +256,11 @@ describe('QR code rendering into [data-netbox-qr] elements', () => {
   });
 
   test('when embedded in an iframe, a rejected value is reported to the parent window, prefixed with the element id', () => {
+    // Pinned to a fixed level for the same reason as above — the throw must
+    // land on the real render call, not auto's own preceding probe call.
     jest.spyOn(console, 'error').mockImplementation(() => {});
-    document.body.innerHTML = jsonScript('netbox-qr-meta', { value: 'x' }) + '<div data-netbox-qr data-element-id="qr-2">bad</div>';
+    document.body.innerHTML = jsonScript('netbox-qr-meta', { value: 'x' }) +
+      '<div data-netbox-qr data-element-id="qr-2" data-correct-level="H">bad</div>';
     global.QRCode = jest.fn().mockImplementationOnce(() => {
       throw new Error('bad value');
     });

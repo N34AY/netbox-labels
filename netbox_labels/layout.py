@@ -140,14 +140,15 @@ def _element_style(element):
 
 
 def _render_qr_element(element):
-    correct_level = element.get('correct_level') or 'H'
-    # 'auto' is resolved client-side (qr-render.js), per the actual rendered
-    # value's length — picks the strongest level that doesn't need a bigger
-    # QR version than the weakest (L) alone would, so short values get extra
-    # damage-resilience for free without ever making the code denser/harder
-    # to scan than always using L would.
+    # 'auto' — the default, both when unset and when an unrecognized value slips
+    # through — is resolved client-side (qr-render.js), per the actual rendered
+    # value's length: it picks the strongest level that doesn't need a bigger QR
+    # version than the weakest (L) alone would, so short values get extra
+    # damage-resilience for free without ever making the code denser/harder to
+    # scan than always using a fixed level (especially a blanket 'H') would.
+    correct_level = element.get('correct_level') or 'auto'
     if correct_level not in ('L', 'M', 'Q', 'H', 'auto'):
-        correct_level = 'H'
+        correct_level = 'auto'
     style = _element_style(element) + 'background:#fff;'
     # Like _render_barcode_element, the bound value is embedded as the div's
     # own inner text (read via .textContent by qr-render.js) rather than a

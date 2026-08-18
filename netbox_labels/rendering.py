@@ -1,10 +1,14 @@
 import copy
+import logging
 
 from django.contrib.contenttypes.models import ContentType
 from utilities.api import get_serializer_for_model
 from utilities.jinja2 import render_jinja2
 
 from .layout import text_content
+from .models import QRSettings
+
+logger = logging.getLogger(__name__)
 
 
 # Only the html_code render goes through autoescape — its output is inserted into the
@@ -15,15 +19,34 @@ from .layout import text_content
 _HTML_ENV_PARAMS = {'autoescape': True}
 
 
+def _resolve_object_url(default_url, obj, object_type):
+    """Applies QRSettings.custom_object_url, if configured, in place of the object's real
+    absolute NetBox URL — e.g. to point the QR code at a shorter external redirect/shortener
+    URL instead, which reduces the amount of data encoded and eases scanning.
+
+    Falls back to default_url (rather than raising) on a broken template, so a single bad
+    setting can't take down every label's render."""
+    template = QRSettings.load().custom_object_url
+    if not template:
+        return default_url
+    try:
+        return render_jinja2(template, {'object': obj, 'object_type': object_type}).strip()
+    except Exception:
+        logger.exception('Failed to render custom object URL template; falling back to the default URL.')
+        return default_url
+
+
 def build_context(instance, request):
     """Context made available to a QRTemplate's Jinja2 fields (qr_value, html_code)."""
     serializer_class = get_serializer_for_model(instance)
     serializer = serializer_class(instance, context={'request': request})
+    object_type = ContentType.objects.get_for_model(instance)
+    default_url = request.build_absolute_uri(instance.get_absolute_url())
 
     return {
         'object': instance,
-        'object_type': ContentType.objects.get_for_model(instance),
-        'object_url': request.build_absolute_uri(instance.get_absolute_url()),
+        'object_type': object_type,
+        'object_url': _resolve_object_url(default_url, instance, object_type),
         'object_data': serializer.data,
     }
 
@@ -47,10 +70,14 @@ class _PlaceholderObject:
 
 def build_placeholder_context(request):
     """Mock-data counterpart to build_context(), for previewing without a real object."""
+    placeholder_object = _PlaceholderObject()
+    placeholder_object_type = _PlaceholderObjectType()
+    default_url = request.build_absolute_uri('/')
+
     return {
-        'object': _PlaceholderObject(),
-        'object_type': _PlaceholderObjectType(),
-        'object_url': request.build_absolute_uri('/'),
+        'object': placeholder_object,
+        'object_type': placeholder_object_type,
+        'object_url': _resolve_object_url(default_url, placeholder_object, placeholder_object_type),
         'object_data': {},
     }
 

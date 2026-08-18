@@ -82,7 +82,7 @@ DEFAULT_LAYOUT = {
         {
             'id': 'qr-1', 'type': 'qr',
             'x_mm': 0.6, 'y_mm': 0.6, 'width_mm': 10.5, 'height_mm': 10.5,
-            'correct_level': 'L',
+            'correct_level': 'auto',
         },
         {
             'id': 'text-1', 'type': 'text',
