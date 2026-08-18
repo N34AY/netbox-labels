@@ -523,6 +523,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#visual-designer-qr-type" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Visual designer: QR type
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#visual-designer-qr-error-correction" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -837,6 +848,17 @@
     <span class="md-ellipsis">
       
         Visual designer: barcode formats
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#visual-designer-qr-type" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Visual designer: QR type
       
     </span>
   </a>
@@ -1185,6 +1207,45 @@ whose value it can actually check up front:</p>
   is left blank and the mismatch is only logged to the browser console, prefixed
   <code>[NetBoxQR/Barcode]</code>.</li>
 </ul>
+<h2 id="visual-designer-qr-type">Visual designer: QR type</h2>
+<p>A <strong>qr</strong> element's own <strong>Type</strong> field (separate from <strong>Content</strong>, above — content decides <em>what</em>
+value is encoded, type decides how a scanner should interpret it) prefixes that value with a URI
+scheme, so scanning the code offers to act on it directly instead of just displaying the raw text:</p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Prefix</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>URL / plain text</td>
+<td><em>(none)</em></td>
+<td>The <strong>Content</strong> value, unchanged — the default.</td>
+</tr>
+<tr>
+<td>Phone number</td>
+<td><code>tel:</code></td>
+<td>Offers to call the number.</td>
+</tr>
+<tr>
+<td>Email</td>
+<td><code>mailto:</code></td>
+<td>Offers to compose an email to it.</td>
+</tr>
+<tr>
+<td>SMS</td>
+<td><code>sms:</code></td>
+<td>Offers to text it.</td>
+</tr>
+</tbody>
+</table>
+<p>This only makes sense when <strong>Content</strong> actually resolves to that kind of value — e.g. Type
+<strong>Phone number</strong> paired with a Custom Jinja2 expression like <code>object.custom_field_data.phone</code>, not
+with Object URL. Only <strong>qr</strong> elements have a Type field; barcodes always encode their Content
+value exactly as-is.</p>
 <h2 id="visual-designer-qr-error-correction">Visual designer: QR error correction</h2>
 <p>A QR code's error correction level (<code>L</code>/<code>M</code>/<code>Q</code>/<code>H</code>) trades off two things that both matter for a
 small printed label: a higher level survives more physical damage (scratches, dirt, fading)

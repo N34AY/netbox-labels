@@ -156,6 +156,44 @@ class LayoutToHtmlTests(SimpleTestCase):
         opening_tag_end = html.index('>', html.index('<div data-netbox-qr'))
         self.assertIn('{{ object_url }}', html[opening_tag_end:])
 
+    def test_qr_type_phone_prefixes_the_bound_value_with_tel(self):
+        layout = {'elements': [{'id': 'q1', 'type': 'qr', 'binding': 'object_url', 'qr_type': 'phone'}]}
+        html = layout_to_html(layout)
+        opening_tag_end = html.index('>', html.index('<div data-netbox-qr'))
+        self.assertIn('tel:{{ object_url }}', html[opening_tag_end:])
+
+    def test_qr_type_email_prefixes_the_bound_value_with_mailto(self):
+        layout = {'elements': [{'id': 'q1', 'type': 'qr', 'binding': 'custom', 'expr': 'object.email', 'qr_type': 'email'}]}
+        html = layout_to_html(layout)
+        opening_tag_end = html.index('>', html.index('<div data-netbox-qr'))
+        self.assertIn("mailto:{{ (object.email)|default('object.email') }}", html[opening_tag_end:])
+
+    def test_qr_type_sms_prefixes_the_bound_value_with_sms(self):
+        layout = {'elements': [{'id': 'q1', 'type': 'qr', 'binding': 'static', 'text': '+380000000', 'qr_type': 'sms'}]}
+        html = layout_to_html(layout)
+        opening_tag_end = html.index('>', html.index('<div data-netbox-qr'))
+        self.assertIn('sms:{% raw %}+380000000{% endraw %}', html[opening_tag_end:])
+
+    def test_qr_type_url_or_unset_adds_no_prefix(self):
+        for qr_type in (None, 'url', 'nonsense'):
+            element = {'id': 'q1', 'type': 'qr', 'binding': 'object_url'}
+            if qr_type is not None:
+                element['qr_type'] = qr_type
+            html = layout_to_html({'elements': [element]})
+            opening_tag_end = html.index('>', html.index('<div data-netbox-qr'))
+            self.assertEqual(html[opening_tag_end + 1:html.index('</div>', opening_tag_end)], '{{ object_url }}')
+
+    def test_qr_type_prefix_is_skipped_for_a_no_binding_legacy_element(self):
+        # A qr_type with no binding at all (only possible on a pre-existing
+        # legacy element — the designer always sets a binding) must not
+        # prefix the empty fallback-to-template-value inner text; that would
+        # turn "" (falls back to window.NetBoxQR.value) into "tel:" (a bogus
+        # non-empty value of its own).
+        layout = {'elements': [{'id': 'q1', 'type': 'qr', 'qr_type': 'phone'}]}
+        html = layout_to_html(layout)
+        opening_tag_end = html.index('>', html.index('<div data-netbox-qr'))
+        self.assertEqual(html[opening_tag_end + 1:html.index('</div>', opening_tag_end)], '')
+
     def test_qr_static_binding_escapes_text_against_content_breakout(self):
         layout = {'elements': [
             {'id': 'q1', 'type': 'qr', 'binding': 'static', 'text': '<script>alert(1)</script>'},

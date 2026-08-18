@@ -29,6 +29,7 @@ Layout shape:
             "letter_spacing_mm": float,
             # qr only:
             "correct_level": "L" | "M" | "Q" | "H" | "auto",
+            "qr_type": "url" | "phone" | "email" | "sms",  # default "url" (no prefix)
             # A qr element with no "binding" key at all (only ever true of
             # elements saved before per-element bindings existed) keeps its
             # original behavior: falling back to the template-wide qr_value
@@ -129,6 +130,19 @@ def text_content(element):
     return ''
 
 
+# A qr element's "Type" glues one of these literal prefixes in front of whatever its own
+# binding renders, so a scanner offers to call/email/text the value directly instead of just
+# showing it as text — 'url' (the default) glues nothing, keeping today's behavior unchanged.
+# Safe to concatenate as plain literal text ahead of value_content's own Jinja2 source: every
+# prefix here is fixed ASCII with no Jinja2-special characters, so it needs no escaping of its
+# own regardless of what follows it.
+QR_TYPE_PREFIXES = {
+    'phone': 'tel:',
+    'email': 'mailto:',
+    'sms': 'sms:',
+}
+
+
 def _element_style(element):
     return (
         f"position:absolute;"
@@ -158,6 +172,9 @@ def _render_qr_element(element):
     # it's left with no inner text so qr-render.js falls back to the
     # template-wide window.NetBoxQR.value, preserving its original behavior.
     value_content = text_content(element) if 'binding' in element else ''
+    qr_type_prefix = QR_TYPE_PREFIXES.get(element.get('qr_type'), '')
+    if qr_type_prefix and value_content:
+        value_content = qr_type_prefix + value_content
     element_id = escape(str(element.get('id', '')))
     # data-color-dark is already read by qr-render.js (it defaults to
     # '#000000' itself when the attribute is absent, same as this) — this

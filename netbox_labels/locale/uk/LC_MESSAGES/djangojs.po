@@ -151,28 +151,59 @@ msgid "Barcode format"
 msgstr ""
 
 #: static/netbox_labels/qr-designer.js:820
-#: static/netbox_labels/qr-designer.js:831
-#: static/netbox_labels/qr-designer.js:835
+#: static/netbox_labels/qr-designer.js:841
+#: static/netbox_labels/qr-designer.js:845
 msgid "Color"
 msgstr "Колір"
 
 #: static/netbox_labels/qr-designer.js:823
+msgid "Type"
+msgstr "Тип"
+
+#: static/netbox_labels/qr-designer.js:825
+msgid "URL / plain text"
+msgstr "URL / звичайний текст"
+
+#: static/netbox_labels/qr-designer.js:826
+msgid "Phone number"
+msgstr "Номер телефону"
+
+#: static/netbox_labels/qr-designer.js:827
+msgid "Email"
+msgstr "Ел. пошта"
+
+#: static/netbox_labels/qr-designer.js:828
+msgid "SMS"
+msgstr "SMS"
+
+#: static/netbox_labels/qr-designer.js:830
+msgid ""
+"Prefixes the encoded value so a scanner offers to call, email, or text it "
+"directly, instead of just showing the raw text. Leave as \"URL / plain "
+"text\" for a link or any other value as-is."
+msgstr ""
+"Додає до закодованого значення префікс, щоб сканер одразу пропонував "
+"подзвонити, написати листа чи SMS, а не просто показував текст. Залиште "
+"\"URL / звичайний текст\" для посилання чи будь-якого іншого значення "
+"як є."
+
+#: static/netbox_labels/qr-designer.js:833
 msgid "Error correction"
 msgstr "Корекція помилок"
 
-#: static/netbox_labels/qr-designer.js:825
+#: static/netbox_labels/qr-designer.js:835
 msgid "Auto (recommended)"
 msgstr "Автоматично (рекомендовано)"
 
-#: static/netbox_labels/qr-designer.js:826
+#: static/netbox_labels/qr-designer.js:836
 msgid "least redundant, smallest modules"
 msgstr "найменш надлишковий, найменші модулі"
 
-#: static/netbox_labels/qr-designer.js:827
+#: static/netbox_labels/qr-designer.js:837
 msgid "most redundant"
 msgstr "найбільш надлишковий"
 
-#: static/netbox_labels/qr-designer.js:829
+#: static/netbox_labels/qr-designer.js:839
 msgid ""
 "Picks the most damage-resistant level that fits the encoded value without "
 "enlarging the code beyond what L alone would need."
@@ -180,79 +211,79 @@ msgstr ""
 "Обирає найстійкіший до пошкоджень рівень, який вміщує закодоване значення, "
 "не збільшуючи код понад те, що знадобилося б лише для рівня L."
 
-#: static/netbox_labels/qr-designer.js:833
+#: static/netbox_labels/qr-designer.js:843
 msgid "Font size (mm)"
 msgstr "Розмір шрифту (мм)"
 
-#: static/netbox_labels/qr-designer.js:834
+#: static/netbox_labels/qr-designer.js:844
 msgid "Weight"
 msgstr "Насиченість"
 
-#: static/netbox_labels/qr-designer.js:834
+#: static/netbox_labels/qr-designer.js:844
 msgid "Normal"
 msgstr "Звичайний"
 
-#: static/netbox_labels/qr-designer.js:834
+#: static/netbox_labels/qr-designer.js:844
 msgid "Bold"
 msgstr "Жирний"
 
-#: static/netbox_labels/qr-designer.js:836
+#: static/netbox_labels/qr-designer.js:846
 msgid "Align"
 msgstr "Вирівнювання"
 
-#: static/netbox_labels/qr-designer.js:836
+#: static/netbox_labels/qr-designer.js:846
 msgid "Left"
 msgstr "Ліворуч"
 
-#: static/netbox_labels/qr-designer.js:836
+#: static/netbox_labels/qr-designer.js:846
 msgid "Center"
 msgstr "По центру"
 
-#: static/netbox_labels/qr-designer.js:836
+#: static/netbox_labels/qr-designer.js:846
 msgid "Right"
 msgstr "Праворуч"
 
-#: static/netbox_labels/qr-designer.js:837
+#: static/netbox_labels/qr-designer.js:847
 msgid "Vertical align"
 msgstr "Вертикальне вирівнювання"
 
-#: static/netbox_labels/qr-designer.js:837
+#: static/netbox_labels/qr-designer.js:847
 msgid "Top"
 msgstr "Зверху"
 
-#: static/netbox_labels/qr-designer.js:837
+#: static/netbox_labels/qr-designer.js:847
 msgid "Middle"
 msgstr "Посередині"
 
-#: static/netbox_labels/qr-designer.js:837
+#: static/netbox_labels/qr-designer.js:847
 msgid "Bottom"
 msgstr "Знизу"
 
-#: static/netbox_labels/qr-designer.js:838
+#: static/netbox_labels/qr-designer.js:848
 msgid "Transform"
 msgstr "Перетворення"
 
-#: static/netbox_labels/qr-designer.js:839
+#: static/netbox_labels/qr-designer.js:849
 msgid "None"
 msgstr "Немає"
 
-#: static/netbox_labels/qr-designer.js:839
+#: static/netbox_labels/qr-designer.js:849
 msgid "UPPERCASE"
 msgstr "ВЕЛИКІ ЛІТЕРИ"
 
-#: static/netbox_labels/qr-designer.js:839
+#: static/netbox_labels/qr-designer.js:849
 msgid "lowercase"
 msgstr "маленькі літери"
 
-#: static/netbox_labels/qr-designer.js:839
+#: static/netbox_labels/qr-designer.js:849
 msgid "Capitalize"
 msgstr "З великої літери"
 
-#: static/netbox_labels/qr-designer.js:841
+#: static/netbox_labels/qr-designer.js:851
 msgid "Letter spacing (mm)"
 msgstr "Міжлітерний інтервал (мм)"
 
-#: static/netbox_labels/qr-designer.js:847
+#: static/netbox_labels/qr-designer.js:857
 msgid "Delete element"
 msgstr "Видалити елемент"
 

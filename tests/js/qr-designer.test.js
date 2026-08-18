@@ -373,7 +373,7 @@ describe('add / delete elements', () => {
     expect(qrEls()).toHaveLength(0);
   });
 
-  test('adding a qr element defaults its binding to Object URL, its color to black, and error correction to Auto', () => {
+  test('adding a qr element defaults its binding to Object URL, its color to black, error correction to Auto, and type to URL', () => {
     loadDesigner({ elements: [] });
     els().addQr.click();
 
@@ -381,6 +381,41 @@ describe('add / delete elements', () => {
     expect(els().properties.querySelector('[data-prop="binding"]').value).toBe('object_url');
     expect(els().properties.querySelector('[data-prop="color"]').value).toBe('#000000');
     expect(els().properties.querySelector('[data-prop="correct_level"]').value).toBe('auto');
+    expect(els().properties.querySelector('[data-prop="qr_type"]').value).toBe('url');
+  });
+
+  test('a qr element\'s type select offers URL/Phone/Email/SMS, and shows an element\'s own saved type as selected', () => {
+    loadDesigner({ elements: [{ ...QR_EL, qr_type: 'email' }] });
+    mousedown(qrEls()[0], 0, 0);
+    mouseup();
+
+    const select = els().properties.querySelector('[data-prop="qr_type"]');
+    expect(Array.from(select.options).map((o) => o.value)).toEqual(['url', 'phone', 'email', 'sms']);
+    expect(select.value).toBe('email');
+  });
+
+  test('changing a qr element\'s type updates it and enables undo', () => {
+    loadDesigner({ elements: [QR_EL] });
+    mousedown(qrEls()[0], 0, 0);
+    mouseup();
+
+    const select = els().properties.querySelector('[data-prop="qr_type"]');
+    select.value = 'phone';
+    select.dispatchEvent(new Event('input', { bubbles: true }));
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+
+    const { saveForm, layoutJsonInput, undo } = els();
+    saveForm.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    expect(JSON.parse(layoutJsonInput.value).elements[0].qr_type).toBe('phone');
+    expect(undo.disabled).toBe(false);
+  });
+
+  test('a barcode element has no qr-only type field', () => {
+    loadDesigner({ elements: [BARCODE_EL] });
+    mousedown(qrEls()[0], 0, 0);
+    mouseup();
+
+    expect(els().properties.querySelector('[data-prop="qr_type"]')).toBeNull();
   });
 
   test('adding a barcode element appends it with CODE128/object URL defaults, selects it, and enables undo', () => {

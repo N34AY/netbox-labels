@@ -199,6 +199,24 @@ whose value it can actually check up front:
   is left blank and the mismatch is only logged to the browser console, prefixed
   `[NetBoxQR/Barcode]`.
 
+## Visual designer: QR type
+
+A **qr** element's own **Type** field (separate from **Content**, above — content decides *what*
+value is encoded, type decides how a scanner should interpret it) prefixes that value with a URI
+scheme, so scanning the code offers to act on it directly instead of just displaying the raw text:
+
+| Type | Prefix | Result |
+| --- | --- | --- |
+| URL / plain text | *(none)* | The **Content** value, unchanged — the default. |
+| Phone number | `tel:` | Offers to call the number. |
+| Email | `mailto:` | Offers to compose an email to it. |
+| SMS | `sms:` | Offers to text it. |
+
+This only makes sense when **Content** actually resolves to that kind of value — e.g. Type
+**Phone number** paired with a Custom Jinja2 expression like `object.custom_field_data.phone`, not
+with Object URL. Only **qr** elements have a Type field; barcodes always encode their Content
+value exactly as-is.
+
 ## Visual designer: QR error correction
 
 A QR code's error correction level (`L`/`M`/`Q`/`H`) trades off two things that both matter for a

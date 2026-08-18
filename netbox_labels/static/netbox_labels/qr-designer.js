@@ -820,6 +820,16 @@
 				rows.push(field(_('Color'), colorInput('color', el.color || '#000000')));
 			} else if (el.type === 'qr') {
 				rows.push(field(
+					_('Type'),
+					selectInput('qr_type', el.qr_type || 'url', [
+						['url', _('URL / plain text')],
+						['phone', _('Phone number') + ' (tel:)'],
+						['email', _('Email') + ' (mailto:)'],
+						['sms', _('SMS') + ' (sms:)'],
+					]),
+					_('Prefixes the encoded value so a scanner offers to call, email, or text it directly, instead of just showing the raw text. Leave as "URL / plain text" for a link or any other value as-is.')
+				));
+				rows.push(field(
 					_('Error correction'),
 					selectInput('correct_level', el.correct_level || 'auto', [
 						['auto', _('Auto (recommended)')],
@@ -1057,7 +1067,7 @@
 		var el = {
 			id: uid('qr'), type: 'qr',
 			x_mm: 1, y_mm: 1, width_mm: size, height_mm: size,
-			correct_level: 'auto', binding: 'object_url', color: '#000000',
+			correct_level: 'auto', binding: 'object_url', color: '#000000', qr_type: 'url',
 		};
 		elements.push(el);
 		selectElement(el.id);
