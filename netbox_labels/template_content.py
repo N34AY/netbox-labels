@@ -11,7 +11,7 @@ PANEL_MODELS = (
     'dcim.device', 'dcim.devicetype', 'dcim.rack', 'dcim.location', 'dcim.site',
     'dcim.module', 'dcim.inventoryitem', 'dcim.cable', 'dcim.powerpanel', 'dcim.powerfeed',
     'virtualization.virtualmachine', 'ipam.prefix', 'ipam.ipaddress',
-    'circuits.circuit', 'tenancy.tenant',
+    'circuits.circuit', 'tenancy.tenant', 'netbox_inventory.asset',
 )
 
 
